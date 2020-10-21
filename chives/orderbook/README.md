@@ -89,9 +89,4 @@ if incoming.side == "buy":
             )
             remaining_ask.commit()
             active_orders.register(remaining_ask)
-    
-
-
-            
-        
 ```
