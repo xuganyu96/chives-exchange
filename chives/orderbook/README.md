@@ -21,9 +21,11 @@ if incoming.side == "buy":
         candidate_asks = active_orders.query.filter(is_opposite_side).filter(is_valid_price)
     candidate_asks = candidate_asks.orderby('target_price', ascending=True)
 
-    # If no orders are matching, then the for loop below will simple be skipped;
+    # If the cheapest of all selling prices is higher then the incoming bid's price, 
+    # then the for loop below will simpll be skipped;
     # in addition, because of the "orderby" above, this for-loop will begin with the lowest 
     # selling ask and iterates with increasing selling price
+    matched_asks = []
     for candidate_ask in candidate_asks:
         if not incoming_bid.size <= 0:
             # if the incoming_bid is already entirely fulfilled, then there is no need for 
@@ -43,32 +45,34 @@ if incoming.side == "buy":
                 ))
                 incoming_bid.size -= transaction_size
                 candidate_ask.size -= transaction_size
+                matched_asks.append(candidate_ask)
     
     # Now that all the matchines are done, we check against the case where the incoming_bid is
-    # all-or-none and/or immediate-or-cancel.
-    remaining_bid = Order(
-        owner=incoming_bid.owner,
-        security_symbol=incoming_bid.security_symbol,
-        side=incoming_bid.side,
-        target_price=incoming_bid.target_price,
-        all_or_none=incoming_bid.all_or_none,
-        immediate_or_cancel=incoming_bid.immediate_or_cancel,
-        good_util_cancel=incoming_bid.good_util_cancel,
-        parent_order_id=incoming_bid.order_id
-    )
+    # all-or-none and/or immediate-or-cancel. Note that at this time, the incoming_bid object's
+    # attributes may have been mutated, but the the corresponding record in the database has
+    # not been updated to reflect the change. This is such that if the incoming bid is not
+    # entirely fulfilled, then it can be reverted back to where it used to be
+    remaining_bid = incoming_bid.copy()
     if incoming_bid.all_or_none and remaining_bid.size > 0:
         # If there is non-empty suborder, and the incoming bid is all-or-none, then revert
         # all changes to the incoming bid and all candidate asks. 
         # No transactions are created
         incoming_bid.revert()
         remaining_bid = incoming_bid
-        for candidate_ask in candidate_asks:
+        for candidate_ask in matched_asks:
             candidate_ask.revert()
         transactions = []
     if incoming_bid.immediate_or_cancel and remaining_bid.size > 0:
+        # If incoming bid is immediate-or-cancel, and remaining_bid is non-empty, then cancel the 
+        # remaining bid
         remaining_bid.cancelled_dttm = datetime.datetime.utcnow()
     if remaining_bid.size > 0 and remaining_bid.cancelled_dttm is None:
-        order_book.register(remaining_bid)
+        # If the remaining bid is not empty, then add the remaining bid to the order book
+        active_orders.register(remaining_bid)
+    
+    # Let's consider the possibilities here:
+    # TODO: Consider at what times does an order (whether the incoming order or the active order)
+    # commit to database, get mutated, or revert?
     remaining_bid.commit()
 
     # Commit the transactions and clean up the order book
@@ -77,6 +81,8 @@ if incoming.side == "buy":
         matched_ask = active_orders.get(transaction.ask_id)
         active_orders.deregister(matched_ask)
         if matched_ask.size > 0:
+            # If a matched ask is only partially fulfilled, then after deregistering the current
+            # matched ask, create a sub-order from the remains, and register that sub-order
             remaining_ask = Order(
                 owner=matched_ask.owner,
                 security_symbol=matched_ask.security_symbol,
@@ -90,3 +96,4 @@ if incoming.side == "buy":
             remaining_ask.commit()
             active_orders.register(remaining_ask)
 ```
+
