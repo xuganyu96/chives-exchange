@@ -69,11 +69,11 @@ if incoming.side == "buy":
     if remaining_bid.size > 0 and remaining_bid.cancelled_dttm is None:
         # If the remaining bid is not empty, then add the remaining bid to the order book
         active_orders.register(remaining_bid)
-    
-    # Let's consider the possibilities here:
-    # TODO: Consider at what times does an order (whether the incoming order or the active order)
-    # commit to database, get mutated, or revert?
-    remaining_bid.commit()
+    if remaining_bid.size > 0:
+        # incoming_bid abstracts the order as it comes in, so there is no need to commit it again;
+        # the only thing we are concerned with here is what remains of it if the remains, after
+        # counting for AON and IOC
+        remaining_bid.commit()
 
     # Commit the transactions and clean up the order book
     for transaction in transactions:
@@ -83,17 +83,7 @@ if incoming.side == "buy":
         if matched_ask.size > 0:
             # If a matched ask is only partially fulfilled, then after deregistering the current
             # matched ask, create a sub-order from the remains, and register that sub-order
-            remaining_ask = Order(
-                owner=matched_ask.owner,
-                security_symbol=matched_ask.security_symbol,
-                side=matched_ask.side,
-                target_price=matched_ask.target_price,
-                all_or_none=matched_ask.all_or_none,
-                immediate_or_cancel=matched_ask.immediate_or_cancel,
-                good_util_cancel=matched_ask.good_util_cancel,
-                parent_order_id=matched_ask.order_id
-            )
+            remaining_ask = matched_ask.copy()
             remaining_ask.commit()
             active_orders.register(remaining_ask)
 ```
-
