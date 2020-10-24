@@ -87,3 +87,5 @@ if incoming.side == "buy":
             remaining_ask.commit()
             active_orders.register(remaining_ask)
 ```
+
+It should be fairly obvious that the case where the incoming order is an ask is just a flipped case of what is written above so I am not repeating myself here.
