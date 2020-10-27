@@ -1,6 +1,7 @@
+import datetime as dt
+
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql.functions import now as server_side_now
 
 Base = declarative_base()
 
@@ -19,6 +20,18 @@ class Order(Base):
     # good_util_cancelled = Column(Boolean, nullable=False) is out of scope
     cancelled_dttm = Column(DateTime)
 
+    def copy(self):
+        return Order(
+            security=self.security,
+            side=self.side,
+            size=self.size,
+            price=self.price,
+            all_or_none=self.all_or_none,
+            immediate_or_cancel=self.immediate_or_cancel,
+            active=self.active,
+            cancelled_dttm=self.cancelled_dttm
+        )
+
     def __repr__(self):
         return f"<Order(id={self.id}, security={self.security}, side={self.side})>"
 
@@ -35,7 +48,7 @@ class Transaction(Base):
     price = Column(Float, nullable=False)
     ask_id = Column(Integer, nullable=False) # TODO: Convert to foreign key later
     bid_id = Column(Integer, nullable=False) # TODO: Convert to foreign key later
-    transact_dttm = Column(DateTime, nullable=False, default=server_side_now)
+    transact_dttm = Column(DateTime, nullable=False, default=dt.datetime.utcnow)
 
     def __repr__(self):
         return f"<Transaction(id={self.id} time={self.transact_dttm})>"
