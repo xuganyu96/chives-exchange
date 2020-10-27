@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from chives.models import Base, Order
+from chives.models import Base, Order, Transaction
 
 engine = create_engine("sqlite:///:memory:", echo=True)
 Base.metadata.create_all(engine)
