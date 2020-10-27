@@ -35,7 +35,7 @@ if incoming.side == "buy":
                 # If the candidate_ask is all-or-none, and the incoming_bid cannot fulfill it 
                 # entirely, then the candidate_ask will not be matched with the incoming_bid 
                 # at all.
-                transaction_size = min(remaining_order.size, candidate_ask.size)
+                transaction_size = min(incoming_bid.size, candidate_ask.size)
                 transactions.append(Transaction(
                     security_symbol=candidate_ask.security_symbol,
                     ask_id=candidate_ask.order_id,
