@@ -64,9 +64,9 @@ def match(book: OrderBook, incoming: Order, session=session):
 if __name__ == "__main__":
     book = OrderBook(security="AAPL")
 
-    ask_1 = Order(security="AAPL", side="ask", size=100, price=100)
-    ask_2 = Order(security="AAPL", side="ask", size=100, price=99)
-    buy_1 = Order(security="AAPL", side="bid", size=120, price=101)
+    ask_1 = Order(security="AAPL", side="ask", size=100, price=100) #   order_id 1
+    ask_2 = Order(security="AAPL", side="ask", size=100, price=99) #    order_id 2
+    buy_1 = Order(security="AAPL", side="bid", size=120, price=101) #   order_id 3
 
     # Test the buy-side algorithm
     session.add_all([ask_1, ask_2])
@@ -74,6 +74,18 @@ if __name__ == "__main__":
     book.register(ask_1)
     book.register(ask_2)
 
-    # TODO: verify that after this method runs, the orders and order_book is in correct state
+    # In the example above we have two asks, one selling 100 shares at $100, and the other selling
+    # 100 shares at $99. I manually entered them into the order book to be matched by the next 
+    # bid that buys 120 shares at $101
+    #
+    # buy_1 will first be matched with ask_2 since ask_2 is cheaper. ask_2 fulfills 100 shares of
+    # buy_1, so a transaction with size 100 and priced at $99 is created.
+    #
+    # The remaining 20 shares of buy_1 will be fulfilled by ask_1 at $100. This creates another 
+    # transaction with size 20 priced at $100.
+    #
+    # At the end, the a sub-order of ask_1 remains in the order_book
+    # the Order table contains 4 entries: ask_1, ask_2, buy_1, and the suborder of ask_1
+    # The Transaction table contains 2 entries
     match(book, buy_1, session=session)
     
