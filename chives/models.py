@@ -18,6 +18,7 @@ class Order(Base):
     immediate_or_cancel = Column(Boolean, nullable=False, default=False)
     active = Column(Boolean, nullable=False, default=False)
     # good_util_cancelled = Column(Boolean, nullable=False) is out of scope
+    parent_order_id = Column(Integer, unique=True)
     cancelled_dttm = Column(DateTime)
 
     def copy(self):
@@ -29,6 +30,7 @@ class Order(Base):
             all_or_none=self.all_or_none,
             immediate_or_cancel=self.immediate_or_cancel,
             active=self.active,
+            parent_order_id=self.parent_order_id,
             cancelled_dttm=self.cancelled_dttm
         )
 
