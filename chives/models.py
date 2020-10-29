@@ -21,7 +21,7 @@ class Order(Base):
     parent_order_id = Column(Integer, unique=True)
     cancelled_dttm = Column(DateTime)
 
-    def copy(self):
+    def create_suborder(self):
         return Order(
             security=self.security,
             side=self.side,
@@ -30,7 +30,7 @@ class Order(Base):
             all_or_none=self.all_or_none,
             immediate_or_cancel=self.immediate_or_cancel,
             active=self.active,
-            parent_order_id=self.parent_order_id,
+            parent_order_id=self.id,
             cancelled_dttm=self.cancelled_dttm
         )
 
