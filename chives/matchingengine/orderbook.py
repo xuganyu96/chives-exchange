@@ -155,7 +155,9 @@ class OrderBook:
     
     def commit_trades(self, incoming: Order):
         """
-
+        :return: None.  The method will instead commit all the transactions to database, then 
+        clean up the active orders, removing candidate matches that were fulfilled, and adding back
+        partially fulfilled candidate orders
         """
         # Commit the transactions and clean up the orderbook
         for transaction in self.cycle_state['transactions']:
@@ -185,9 +187,9 @@ class OrderBook:
         """
         Perform the matching actions, propose and validate transactions, then commit to database
         :param incoming: the incoming order
-        :return: None. The method will instead commit all the transactions to database, then 
-        clean up the active orders, removing candidate matches that were fulfilled, and adding back
-        partially fulfilled candidate orders
+        :return: None. This method will perform one matching cycle in which the incoming order is
+        matched with active orders, transactions are proposed where appropriate, and trades 
+        executed and committed into database
         """
         session.add(incoming)
         session.commit()
