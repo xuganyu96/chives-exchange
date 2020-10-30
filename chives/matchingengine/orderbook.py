@@ -6,7 +6,11 @@ from chives import session
 
 
 class OrderNotFoundError(KeyError):
-        pass
+    """
+    The exception to raise when the orderbook instance is asked to retrieve an order that does not
+    exist in self.active_orders
+    """
+    pass
 
 
 class OrderBook:
@@ -61,6 +65,14 @@ class OrderBook:
             raise OrderNotFoundError(f"Order ID {order_id} is not registered in order book")
     
     def get_candidates(self, incoming: Order) -> ty.List[Order]:
+        """
+        :param incoming: the Order instance that is the incoming order
+        :return: a list of Order instances from self.active_orders that satisfy the following 
+        conditions: 
+        1.  they are from the oppposite side of the incoming order
+        2.  if the incoming order has a target price, then the target price of the active order 
+        must be equal to or better than the incoming's target price
+        """
         candidates = []
         if incoming.side == 'bid':
             candidates = self.get_orders(lambda order: order.side == 'ask')
@@ -77,6 +89,16 @@ class OrderBook:
         return candidates
 
     def propose_trade(self, incoming: Order, active_order: Order):
+        """
+        :param incoming: the incoming order, possibly with reduced size through prior trade 
+        proposals
+        :param active_order: the active order to be matched against the incoming order
+        :return: if the incoming order and the active order can match up in a trade, then create 
+        the appropriate Transaction instance and retunr it. There are cases in which no trade can 
+        be proposed, in which case None is returned
+        """
+        # Note that this method is no responsible for checking that the pair has opposite sides 
+        # and intersecting target price
         ask = incoming if incoming.side == 'ask' else active_order
         bid = incoming if incoming.side == 'bid' else active_order 
         transaction_size = min(ask.size, bid.size)
@@ -86,19 +108,30 @@ class OrderBook:
         if active_order.all_or_none and transaction_size < active_order.size:
             return None
         else:
+            # active_order always has an equal or better deal than the incoming order so we 
+            # always use the active_order's price
             transaction = Transaction(
                 security=ask.security,
                 ask_id=ask.id,
                 bid_id=bid.id,
                 size=transaction_size,
-                # active_order always has an equal or better deal than the incoming order so we 
-                # always use the active_order's price
                 price=active_order.price
             )
             return transaction
     
     def cleanup_incoming(self, incoming: Order):
+        """
+        :param incoming: the incoming order, possibly mutated after all trade proposals were made
+        :return: None. The method will run the incoming order through its policy types and apply 
+        all-or-none and immediate-or-cancel appropriately. Finally, if there is remaining part of
+        the order that is unfulfilled and not cancelled, it will be registered into the active 
+        orders to be matched in later cycles.
+        """
         # Clean up the remaining portion of the incoming order 
+        # TODO: write test cases for each of the following logical branches:
+        #       1. incoming order is completely fulfilled, or partially fulfilled, or not fulfilled
+        #       2. incoming order is all-or-none or not
+        #       3. incoming order is immediate-or-cancel or not
         remaining = incoming.create_suborder()
         if len(self.cycle_state['transactions']) == 0:
             # No transactions was proposed, so the "remaining" is just the incoming itself
@@ -121,6 +154,9 @@ class OrderBook:
             session.commit()
     
     def commit_trades(self, incoming: Order):
+        """
+
+        """
         # Commit the transactions and clean up the orderbook
         for transaction in self.cycle_state['transactions']:
             session.add(transaction)
@@ -149,7 +185,9 @@ class OrderBook:
         """
         Perform the matching actions, propose and validate transactions, then commit to database
         :param incoming: the incoming order
-        :return: None
+        :return: None. The method will instead commit all the transactions to database, then 
+        clean up the active orders, removing candidate matches that were fulfilled, and adding back
+        partially fulfilled candidate orders
         """
         session.add(incoming)
         session.commit()
