@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import datetime as dt
 import typing as ty
 
@@ -5,7 +6,7 @@ from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker
 
 from chives.models import Order, Transaction
-from chives import session, Session
+from chives import Session
 
 
 class OrderNotFoundError(KeyError):
@@ -115,22 +116,37 @@ class MatchingEngine:
     """
     Abstraction of the matching engine with the following core components:
     -   interface with the order queue
-    -   interface with the database， including the ORM session
+    -   interface with the database, including the ORM session
     -   orderbook
     -   match cycle
     """
     def __init__(self, security_symbol: str, sql_engine: SQLEngine):
         """Initialize the matching engine
 
-        :param security_symbol: [description]
+        :param security_symbol: the symbol of the security that this match engine operates with
         :type security_symbol: str
-        :param sql_engine: [description]
-        :type sql_engine: SQLEngine
+        :param sql_engine: A SQLAlchemy engine object that will be used to create ORM sessions
+        :type sql_engine: sqlalchemy.engine.Engine
         """
         self.security_symbol = security_symbol 
-        self.order_book = OrderBook(security=security_symbol)
-        self.order_queue_client = None # TODO: This is for a next issue
+        self.order_book = OrderBook(security_symbol)
+        self.order_queue_client = None # TODO: This is for feature/implement-order-queue
         self.Session = sessionmaker(bind=sql_engine)
+    
+    @contextmanager
+    def scoped_session(self):
+        """Yield a session object that can be used to interface with database.
+        This implementation is derived from https://docs.sqlalchemy.org/en/13/orm/session_basics.html
+        """
+        session = self.Session()
+        try:
+            yield session 
+            session.commit()
+        except:
+            session.rollback()
+            raise 
+        finally:
+            session.close()
 
     def heartbeat(self):
         """The main cycle of operation that goes: get an incoming order, generate a match cycle, 
@@ -139,7 +155,7 @@ class MatchingEngine:
         incoming: Order = self.order_queue_client.poll()
         updated_orders, transactions = self.match(incoming)
         
-        with self.Session() as session:
+        with self.scoped_session() as session:
             for object_mapping in updated_orders + transactions:
                 session.merge(object_mapping)
             session.commit()

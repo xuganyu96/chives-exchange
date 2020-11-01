@@ -6,4 +6,3 @@ from chives.models import Base, Order, Transaction
 engine = create_engine("sqlite:///:memory:", echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
-session = Session()
