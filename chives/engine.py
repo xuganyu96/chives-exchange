@@ -10,45 +10,55 @@ from chives import Session
 
 
 class OrderNotFoundError(KeyError):
-    """
-    The exception to raise when the orderbook instance is asked to retrieve an order that does not
-    exist in self.active_orders
+    """The exception to raise when the orderbook instance is asked to retrieve 
+    an order that does not exist in self.active_orders
     """
     pass
 
 
 class OrderBook:
     """
-    Abstract of the limit order book that keeps track of active orders. Instances of this class 
-    should be unaware of any matching activities, nor should it have any interaction with the 
-    database.
+    Abstract of the limit order book that keeps track of active orders. 
+    Instances of this class should be unaware of any matching activities, 
+    nor should it have any interaction with the database.
     """
 
     def __init__(self, security_symbol: str):
-        """
-        Initialize a dictionary that contains all active orders with self.active_orders.
-        This dictionary maps order_id (as an integer) to the Order object
+        """Initialize a dictionary that contains all active orders with 
+        self.active_orders. This dictionary maps order_id (as an integer) to 
+        the Order object
+
+        :param security_symbol: the symbol of the security being traded
+        :type security_symbol: str
         """
         self.security_symbol = security_symbol
         self.active_orders: ty.Dict[int, Order] = dict()
 
     def get_order(self, order_id: int) -> Order:
-        """
-        :param order_id: the order ID
-        :return: an Order object that has identical order_id; if there is no order, let the 
-        dictionary object raise the KeyError exception
+        """Read an order by its order_id
+
+        :param order_id: ID of the order to be obtained
+        :type order_id: int
+        :raises OrderNotFoundError: If the order_id has no match, raise it
+        :return: The order
+        :rtype: Order
         """
         if order_id in self.active_orders:
             return self.active_orders[order_id]
         else:
-            raise OrderNotFoundError(f"Order ID {order_id} is not registered in order book")
+            raise OrderNotFoundError(f"Order ID {order_id} is not registered")
 
     def get_orders(self, cond: ty.Callable[[Order], bool]) -> ty.List[Order]:
+        """Get a list of qualified orders
+
+        :param cond: Python callable that takes an order and return a boolean
+        :type cond: ty.Callable[[Order], bool]
+        :return: a list of Order for which cond evals to True, might return 
+        empty list if nothing matches
+        :rtype: ty.List[Order]
         """
-        :param cond: a Python callable that takes an Order object and returns a boolean
-        :return: a list of Orders for which cond(order) evals to True. Might return empty list
-        """
-        return [order for id, order in self.active_orders.items() if cond(order)]
+        return [order for id, order in self.active_orders.items() 
+                    if cond(order)]
     
     def get_candidates(self, incoming: Order, 
                              sort: bool = True) -> ty.List[Order]:
@@ -87,22 +97,26 @@ class OrderBook:
         return candidates
 
     def register(self, order: Order):
-        """
-        :param order: the order to be added into the active_orders dictionary
-        :return: None
+        """Add an order to active_orders
+
+        :param order: The order to be added
+        :type order: Order
         """
         self.active_orders[order.order_id] = order
     
     def deregister(self, order_id: int) -> Order:
-        """
-        :param order_id: an integer that is the order ID of the order to be removed from order book
-        :return: the Order object removed. If there is no matching order_id, then let the dictionary
-        object raise the KeyError exception
+        """Remove an order from active_orders
+
+        :param order_id: the id of the order to be removed
+        :type order_id: int
+        :raises OrderNotFoundError: If ther is no match, raise this error
+        :return: The order that was removed
+        :rtype: Order
         """
         if order_id in self.active_orders:
             return self.active_orders.pop(order_id)
         else:
-            raise OrderNotFoundError(f"Order ID {order_id} is not registered in order book")
+            raise OrderNotFoundError(f"Order ID {order_id} is not found")
 
 
 class MatchingEngine:
@@ -116,15 +130,19 @@ class MatchingEngine:
     def __init__(self, security_symbol: str, sql_engine: SQLEngine):
         """Initialize the matching engine
 
-        :param security_symbol: the symbol of the security that this match engine operates with
+        :param security_symbol: the symbol of the security that this match 
+        engine operates with
         :type security_symbol: str
-        :param sql_engine: A SQLAlchemy engine object that will be used to create ORM sessions
+        :param sql_engine: A SQLAlchemy engine object that will be used to 
+        create ORM sessions
         :type sql_engine: sqlalchemy.engine.Engine
         """
         self.security_symbol = security_symbol 
         self.order_book = OrderBook(security_symbol)
-        self.order_queue_client = None # TODO: This is for feature/implement-order-queue
+        self.order_queue_client = None # TODO: This is for a future feature
         
+        # Since session does not maintain an active connection all the time, 
+        # it is okay to not use a context manager with session
         Session = sessionmaker(bind=sql_engine)
         self.session = Session()
 
