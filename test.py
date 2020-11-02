@@ -12,3 +12,6 @@ if __name__ == "__main__":
     apple_engine.heartbeat(debug=True, incoming=ask_1)
     apple_engine.heartbeat(debug=True, incoming=ask_2)
     apple_engine.heartbeat(debug=True, incoming=bid_1)
+
+    print(apple_engine.session.query(Transaction).all())
+    print(apple_engine.session.query(Order).all())
