@@ -17,48 +17,6 @@ class OrderNotFoundError(KeyError):
     pass
 
 
-class MatchCycle:
-    """
-    Abstraction of the union of incoming order, candidate active orders, and transactions, denoted 
-    by "state of the match cycle". It presents itself as a clean slate with predefined structure 
-    and mutates its attributes as the match cycle progresses, then commits the changes to database 
-    where necessary before returning itself to the clean slate to prepare for a second match cycle.
-
-    Instances of MatchCycle should be unaware of anything in the active order registry. This class 
-    is solely responsible for holding onto and providing the static components of a match cycle
-    """
-    def __init__(self):
-        """
-        A match cycle has three components: incoming order, candidate active orders, transactions
-        """
-        self.incoming: Order = None 
-        self.candidates = []
-        self.matched_candidates: ty.List[Order] = []
-        self.transactions: ty.List[Order] = []
-    
-    def __enter__(self):
-        """
-        :return: self
-        """
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.incoming = None 
-        self.candidates = []
-        self.matched_candidates = []
-        self.transactions = []
-
-    def register_incoming(self, incoming: Order):
-        """
-        :param incoming: the incoming order instance 
-        :return: None. This method will commit the incoming order instance to the database, then 
-        assign it to self.incoming
-        """
-        session.add(incoming)
-        session.commit()
-        self.incoming = incoming
-
-
 class OrderBook:
     """
     Abstract of the limit order book that keeps track of active orders. Instances of this class 
@@ -73,7 +31,6 @@ class OrderBook:
         """
         self.security_symbol = security_symbol
         self.active_orders: ty.Dict[int, Order] = dict()
-        self.cycle_state = MatchCycle()
 
     def get_order(self, order_id: int) -> Order:
         """
@@ -93,6 +50,42 @@ class OrderBook:
         """
         return [order for id, order in self.active_orders.items() if cond(order)]
     
+    def get_candidates(self, incoming: Order, 
+                             sort: bool = True) -> ty.List[Order]:
+        """Given an incoming order, return all active orders that are on the 
+        opposite sides, and that offer better price than the incoming order if 
+        the incoming order has a target price
+
+        :param incoming: the incoming order
+        :type incoming: Order
+        :param sort: return the list with its content sorted from best offer 
+        to worst offer, defaults to True
+        :type sort: bool, optional
+        :return: a list of Order candidate orders, if there is no match, return 
+        an empty list
+        :rtype: ty.List[Order]
+        """
+        candidates: ty.List[Order] = []
+        if incoming.side == 'bid':
+            candidates = self.get_orders(lambda order: order.side == 'ask')
+            if incoming.price:
+                candidates = self.get_orders(
+                    lambda order: (order.side == 'ask') \
+                                    and (order.price <= incoming.price)
+                )
+            if sort:
+                candidates.sort(key=lambda o: o.price)
+        else:
+            candidates = self.get_orders(lambda order: order.side == 'bid')
+            if incoming.price:
+                candidates = self.get_orders(
+                    lambda order: (order.side == 'bid') \
+                                    and (order.price >= incoming.price)
+                )
+            if sort:
+                candidates.sort(key=lambda o: -o.price)
+        return candidates
+
     def register(self, order: Order):
         """
         :param order: the order to be added into the active_orders dictionary
@@ -148,167 +141,168 @@ class MatchingEngine:
         finally:
             session.close()
 
-    def heartbeat(self):
-        """The main cycle of operation that goes: get an incoming order, generate a match cycle, 
-        commit changes to database.
+    def heartbeat(self, debug: bool = False, **kwargs):
+        """The core match cycle logic
+
+        :param debug: If true, use an externally passed in order instead of 
+        polling from the order queue, defaults to False
+        :type debug: bool, optional
         """
-        incoming: Order = self.order_queue_client.poll()
-        updated_orders, transactions = self.match(incoming)
-        
         with self.scoped_session() as session:
-            for object_mapping in updated_orders + transactions:
-                session.merge(object_mapping)
+            incoming: Order = None
+            if debug:
+                incoming = kwargs['incoming']
+            else:
+                incoming: Order = self.order_queue_client.poll()
+            session.add(incoming)
             session.commit()
 
+            updated_orders, transactions = self.match(incoming)
 
+            for object_mappings in updated_orders + transactions:
+                session.merge(object_mappings)
     
+    @classmethod 
+    def propose_trade(cls, incoming: Order, 
+                           candidate: Order) -> ty.Optional[Transaction]:
+        """Given the incoming order and a candidate order, return a Transaction 
+        object that describes the trade that can happen between the two orders.
+        If no trade can be proposed between the two orders, then None will be
+        returned.
 
+        :param incoming: the incoming order
+        :type incoming: Order
+        :param candidate: the candidate order
+        :type candidate: Order
+        :return: the proposed trade between the two order, or None if no trade 
+        can be proposed
+        :rtype: Transaction
+        """
+        # You can safely assume that incoming and candidate are on opposite 
+        # sides and have matching target price, and that the candidate has a 
+        # numeric target price
+        if incoming.remaining_size <= 0 or candidate.remaining_size <= 0:
+            return None 
+        else:
+            ask: Order = incoming if incoming.side == 'ask' else candidate 
+            bid: Order = incoming if incoming.side == 'bid' else candidate
+            # with the if statement above, transaction_size is guaranteed to 
+            # be non-zero
+            transaction_size = min(ask.remaining_size, bid.remaining_size)
 
-# def get_candidates(self, sort: bool = True) -> ty.List[Order]:
-# """
-# :param sort: if True, then the candidates will be sorted based on price. Specifically, if 
-# the incoming order is a bid, then the candidates are sorted in ascending prices; otherwise,
-# the candidates are sorted in descending prices
-# :return: a list of Order instances from self.active_orders that satisfy the following 
-# conditions: 
-# 1.  they are from the oppposite side of the incoming order
-# 2.  if the incoming order has a target price, then the target price of the active order 
-# must be equal to or better than the incoming's target price
-# """
-# candidates = []
-# incoming = self.cycle_state.incoming
-# if incoming.side == 'bid':
-#     candidates = self.get_orders(lambda order: order.side == 'ask')
-#     if incoming.price:
-#         candidates = self.get_orders(
-#             lambda order: (order.side == 'ask') and (order.price <= incoming.price)
-#         )
-#     candidates.sort(key=lambda o: o.price)
-# else:
-#     candidates = self.get_orders(lambda order: order.side == 'bid')
-#     if incoming.price:
-#         candidates = self.get_orders(
-#             lambda order: (order.side == 'bid') and (order.price >= incoming.price)
-#         )
-#     candidates.sort(key=lambda o: -o.price)
-# return candidates
+            # Check if the candidate is all-or-none and accommodate it
+            if candidate.all_or_none:
+                if transaction_size < candidate.remaining_size:
+                    # If the candidate is all-or-none and the transaction 
+                    # cannot fulfill it entirely
+                    return None
+                else:
+                    # the transaction size will always be the candidate's 
+                    # price since by prior filtering, the candidate will 
+                    # always have the better pricing
 
-# def propose_trade(self, incoming: Order, active_order: Order):
-# """
-# :param incoming: the incoming order, possibly with reduced size through prior trade 
-# proposals
-# :param active_order: the active order to be matched against the incoming order
-# :return: if the incoming order and the active order can match up in a trade, then create 
-# the appropriate Transaction instance and retunr it. There are cases in which no trade can 
-# be proposed, in which case None is returned
-# """
-# # Note that this method is no responsible for checking that the pair has opposite sides 
-# # and intersecting target price
-# ask = incoming if incoming.side == 'ask' else active_order
-# bid = incoming if incoming.side == 'bid' else active_order 
-# transaction_size = min(ask.size, bid.size)
+                    transaction: Transaction = Transaction(
+                        security_symbol=ask.security_symbol,
+                        size=transaction_size,
+                        price=candidate.price,
+                        ask_id=ask.order_id,
+                        bid_id=bid.order_id
+                    )
 
-# # If the active_order is all-or-none, and the transaction cannot fulfill the active_order,
-# # then no trade is proposed, None is returned
-# if active_order.all_or_none and transaction_size < active_order.size:
-#     return None
-# else:
-#     # active_order always has an equal or better deal than the incoming order so we 
-#     # always use the active_order's price
-#     transaction = Transaction(
-#         security=ask.security,
-#         ask_id=ask.id,
-#         bid_id=bid.id,
-#         size=transaction_size,
-#         price=active_order.price
-#     )
-#     return transaction
+                    return transaction
+        
+    def match(self, incoming: Order) -> ty.Tuple[ty.List[Order], 
+                                                 ty.List[Transaction]]:
+        """Execute the matching algorithm that matches the incoming order with 
+        the active orders in the order book. Changes to the order book's 
+        active order registry will happen with this method, and those changes 
+        are entirely operating within the RAM. Changes to the database, such 
+        as updates to existing orders and insertion of new orders/transactions,
+        will be returned as ORM instances to be committed outside this method, 
+        but within the heartbeat method.
 
-# def cleanup_incoming(self):
-# """
-# :param incoming: the incoming order, possibly mutated after all trade proposals were made
-# :return: None. The method will run the incoming order through its policy types and apply 
-# all-or-none and immediate-or-cancel appropriately. Finally, if there is remaining part of
-# the order that is unfulfilled and not cancelled, it will be registered into the active 
-# orders to be matched in later cycles.
-# """
-# incoming = self.cycle_state.incoming
-# # Clean up the remaining portion of the incoming order 
-# # TODO: write test cases for each of the following logical branches:
-# #       1. incoming order is completely fulfilled, or partially fulfilled, or not fulfilled
-# #       2. incoming order is all-or-none or not
-# #       3. incoming order is immediate-or-cancel or not
-# remaining = incoming.create_suborder()
-# if len(self.cycle_state.transactions) == 0:
-#     # No transactions was proposed, so the "remaining" is just the incoming itself
-#     remaining = incoming
-# if incoming.all_or_none and remaining.size > 0:
-#     session.refresh(incoming)
-#     remaining = incoming 
-#     for candidate in self.cycle_state.matched_candidates:
-#         session.refresh(candidate)
-#     transactions = []
-# if incoming.immediate_or_cancel and remaining.size > 0:
-#     remaining.cancelled_dttm = dt.datetime.utcnow()
-# if remaining.size > 0 and remaining.cancelled_dttm is None:
-#     self.register(remaining)
-# if remaining.size > 0:
-#     # The remaining portion will become an active order
-#     remaining.active = True
-#     session.refresh(incoming)
-#     session.add(remaining)
-#     session.commit()
+        :param incoming: the incoming order
+        :type incoming: chives.models.Order
+        :return: A tuple of 2: first a list of Order objects, second a list 
+        of Transaction objects
+        :rtype: ty.Tuple[ty.List[Order], ty.List[Transaction]]
+        """
+        order_updates: ty.List[Order] = []
+        transactions: ty.List[Transaction] = []
+        
+        candidates = self.order_book.get_candidates(incoming)
+        
+        # Note that at this moment, every candidate has an order_id, because 
+        # every candidate was once an incoming order, and each incoming order 
+        # is guaranteed to be committed into the database by the end of its
+        # match cycle.
+        #
+        # We need to keep track of the remaining size of the incoming order, 
+        # but I don't want to mutate existing column attributes of the 
+        # incoming_order. Instead, we can attach a new attribute to the 
+        # incoming object
+        incoming.remaining_size = incoming.size
+        for candidate in candidates:
+            candidate.remaining_size = candidate.size
+            # "remaining_size" will not be mutated within self.propose_trade
+            transaction: Transaction = self.propose_trade(incoming, candidate)
+            if transaction is not None:
+                incoming.remaining_size -= transaction.size 
+                candidate.remaining_size -= transaction.size
+                transactions.append(transaction)
 
-# def commit_trades(self):
-# """
-# :return: None.  The method will instead commit all the transactions to database, then 
-# clean up the active orders, removing candidate matches that were fulfilled, and adding back
-# partially fulfilled candidate orders
-# """
-# incoming = self.cycle_state.incoming
-# # Commit the transactions and clean up the orderbook
-# for transaction in self.cycle_state.transactions:
-#     session.add(transaction)
-#     session.commit()
-#     # Use the transaction to find the matched candidate, then deregister that
-#     # candidate from the active orders
-#     matched_candidate_id = transaction.ask_id
-#     if incoming.id == transaction.ask_id:
-#         # If the incoming order is the ask, then the candidate must be the bid
-#         matched_candidate_id = transaction.bid_id
-    
-#     matched_candidate = self.get_order(matched_candidate_id)
-#     matched_candidate.active = False 
-#     self.deregister(matched_candidate.id)
-#     session.commit()
-#     # If a matched candidate has remainings, then create a suborder and register it with 
-#     # the active orders
-#     if matched_candidate.size > 0:
-#         remaining_matched_candidate = matched_candidate.create_suborder()
-#         remaining_matched_candidate.active = True 
-#         session.add(remaining_matched_candidate)
-#         session.commit() 
-#         self.register(remaining_matched_candidate)
-
-# def match(self, incoming: Order):
-# """
-# Perform the matching actions, propose and validate transactions, then commit to database
-# :param incoming: the incoming order
-# :return: None. This method will perform one matching cycle in which the incoming order is
-# matched with active orders, transactions are proposed where appropriate, and trades 
-# executed and committed into database
-# """
-# with self.cycle_state: 
-#     self.cycle_state.register_incoming(incoming)
-
-#     # Get candidate matches
-#     self.cycle_state.candidates = self.get_candidates(sort=True)
-#     for candidate in self.cycle_state.candidates:
-#         transaction = self.propose_trade(incoming, candidate)
-#         if transaction is not None:
-#             self.cycle_state.transactions.append(transaction)
-#             self.cycle_state.matched_candidates.append(candidate)
-#             incoming.size -= transaction.size
-#             candidate.size -= transaction.size
-#     self.cleanup_incoming()
-#     self.commit_trades()
+        # Create the appropriate suborder for the incoming order and mutate
+        # the incoming order according to its order types; by the end of this 
+        # section we should have an remaining and an incoming
+        remaining = incoming.create_suborder()
+        if incoming.all_or_none and incoming.remaining_size > 0:
+            # If the incoming order is all-or-none and is not fully fulfilled, 
+            # then no trade will be made, and the remaining order is the 
+            # incoming order itself.
+            remaining = incoming
+            transactions = []
+            incoming.remaining_size = incoming.size 
+            for candidate in candidates:
+                candidate.remaining_size = candidate.size
+        if incoming.immediate_or_cancel and incoming.remaining_size > 0:
+            # If the incoming order is immediate-or-cancel and is not fully 
+            # fulfilled, then the remains will be cancelled. Note that if 
+            # the incoming also happens to be all-or-none, then "remaining" 
+            # will point to "incoming", so the incoming order itself becomes 
+            # cancelled
+            remaining.cancelled_dttm = dt.datetime.utcnow()
+        if remaining.cancelled_dttm is not None:
+            # If the remaining order is not cancelled yet, it is active. Add 
+            # it to the active order registry
+            remaining.active = True 
+            self.order_book.register(remaining)
+        
+        # Add incoming and remaining to order_updates. It is okay if incoming
+        # and remaining are the same thing, since SQLAlchemy can handle 
+        # merging the same ORM instance twice
+        order_updates.append(incoming)
+        order_updates.append(remaining)
+        
+        # Clean up the candidates
+        for candidate in candidates:
+            if candidate.remaining_size <= 0:
+                # If the active order is fully fulfilled, then it is no longer 
+                # active
+                candidate.active = False
+                self.order_book.deregister(candidate.order_id)
+                order_updates.append(candidate)
+            elif candidate.remaining_size < candidate.size:
+                # If the active order is partially fulfilled, then create an 
+                # active sub-order, deregister the original, and register 
+                # the sub-order
+                candidate.active = False 
+                candidate_remain = candidate.create_suborder()
+                candidate_remain.active = True
+                self.order_book.deregister(candidate.order_id)
+                self.order_book.register(candidate_remain)
+                order_updates.append(candidate)
+                order_updates.append(candidate_remain)
+            else:
+                # If the active order is not touched, then do nothing
+                pass
+        return order_updates, transactions
