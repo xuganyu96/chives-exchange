@@ -91,7 +91,7 @@ class OrderBook:
         :param order: the order to be added into the active_orders dictionary
         :return: None
         """
-        self.active_orders[order.id] = order
+        self.active_orders[order.order_id] = order
     
     def deregister(self, order_id: int) -> Order:
         """
@@ -255,6 +255,10 @@ class MatchingEngine:
         # the incoming order according to its order types; by the end of this 
         # section we should have an remaining and an incoming
         remaining = incoming.create_suborder()
+        if len(transactions) == 0:
+            # If there is no transactions in the first place, then remaining 
+            # is exactly incoming:
+            remaining = incoming
         if incoming.all_or_none and incoming.remaining_size > 0:
             # If the incoming order is all-or-none and is not fully fulfilled, 
             # then no trade will be made, and the remaining order is the 
@@ -271,7 +275,7 @@ class MatchingEngine:
             # will point to "incoming", so the incoming order itself becomes 
             # cancelled
             remaining.cancelled_dttm = dt.datetime.utcnow()
-        if remaining.cancelled_dttm is not None:
+        if remaining.cancelled_dttm is None:
             # If the remaining order is not cancelled yet, it is active. Add 
             # it to the active order registry
             remaining.active = True 
