@@ -124,22 +124,9 @@ class MatchingEngine:
         self.security_symbol = security_symbol 
         self.order_book = OrderBook(security_symbol)
         self.order_queue_client = None # TODO: This is for feature/implement-order-queue
-        self.Session = sessionmaker(bind=sql_engine)
-    
-    @contextmanager
-    def scoped_session(self):
-        """Yield a session object that can be used to interface with database.
-        This implementation is derived from https://docs.sqlalchemy.org/en/13/orm/session_basics.html
-        """
-        session = self.Session()
-        try:
-            yield session 
-            session.commit()
-        except:
-            session.rollback()
-            raise 
-        finally:
-            session.close()
+        
+        Session = sessionmaker(bind=sql_engine)
+        self.session = Session()
 
     def heartbeat(self, debug: bool = False, **kwargs):
         """The core match cycle logic
@@ -148,19 +135,18 @@ class MatchingEngine:
         polling from the order queue, defaults to False
         :type debug: bool, optional
         """
-        with self.scoped_session() as session:
-            incoming: Order = None
-            if debug:
-                incoming = kwargs['incoming']
-            else:
-                incoming: Order = self.order_queue_client.poll()
-            session.add(incoming)
-            session.commit()
+        incoming: Order = None
+        if debug:
+            incoming = kwargs['incoming']
+        else:
+            incoming: Order = self.order_queue_client.poll()
+        self.session.add(incoming)
+        self.session.commit()
 
-            updated_orders, transactions = self.match(incoming)
+        updated_orders, transactions = self.match(incoming)
 
-            for object_mappings in updated_orders + transactions:
-                session.merge(object_mappings)
+        for object_mapping in updated_orders + transactions:
+            self.session.merge(object_mapping)
     
     @classmethod 
     def propose_trade(cls, incoming: Order, 
@@ -191,25 +177,25 @@ class MatchingEngine:
             transaction_size = min(ask.remaining_size, bid.remaining_size)
 
             # Check if the candidate is all-or-none and accommodate it
-            if candidate.all_or_none:
-                if transaction_size < candidate.remaining_size:
+            if candidate.all_or_none \
+                and (transaction_size < candidate.remaining_size):
                     # If the candidate is all-or-none and the transaction 
                     # cannot fulfill it entirely
                     return None
-                else:
-                    # the transaction size will always be the candidate's 
-                    # price since by prior filtering, the candidate will 
-                    # always have the better pricing
+            else:
+                # the transaction size will always be the candidate's 
+                # price since by prior filtering, the candidate will 
+                # always have the better pricing
 
-                    transaction: Transaction = Transaction(
-                        security_symbol=ask.security_symbol,
-                        size=transaction_size,
-                        price=candidate.price,
-                        ask_id=ask.order_id,
-                        bid_id=bid.order_id
-                    )
+                transaction: Transaction = Transaction(
+                    security_symbol=ask.security_symbol,
+                    size=transaction_size,
+                    price=candidate.price,
+                    ask_id=ask.order_id,
+                    bid_id=bid.order_id
+                )
 
-                    return transaction
+                return transaction
         
     def match(self, incoming: Order) -> ty.Tuple[ty.List[Order], 
                                                  ty.List[Transaction]]:
@@ -275,7 +261,7 @@ class MatchingEngine:
             # will point to "incoming", so the incoming order itself becomes 
             # cancelled
             remaining.cancelled_dttm = dt.datetime.utcnow()
-        if remaining.cancelled_dttm is None:
+        if remaining.cancelled_dttm is None and remaining.size > 0:
             # If the remaining order is not cancelled yet, it is active. Add 
             # it to the active order registry
             remaining.active = True 
@@ -285,7 +271,8 @@ class MatchingEngine:
         # and remaining are the same thing, since SQLAlchemy can handle 
         # merging the same ORM instance twice
         order_updates.append(incoming)
-        order_updates.append(remaining)
+        if remaining.size > 0:
+            order_updates.append(remaining)
         
         # Clean up the candidates
         for candidate in candidates:
