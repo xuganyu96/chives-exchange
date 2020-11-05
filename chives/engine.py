@@ -161,20 +161,18 @@ class MatchingEngine:
         self.session.add(incoming)
         self.session.commit()
 
-        updated_orders, transactions, new_active_orders = self.match(incoming)
+        updated_orders, transactions = self.match(incoming)
 
-        # It is possible that new active_order does not yet have an order_id, 
-        # so it needs to go through the commit first before being registered
-        for new_active_order in new_active_orders:
-            # .merge method does not modify the input object but returns the
-            # merged object
-            new_active_order = self.session.merge(new_active_order)
+        # First commit all database changes; if there are sub-orders that don't 
+        # have an ID, they will have it here
+        for updated_order in updated_orders:
+            updated_order = self.session.merge(updated_order)
             self.session.commit()
-            self.order_book.register(new_active_order)
-
-        for object_mapping in updated_orders + transactions:
-            self.session.merge(object_mapping)
-        self.session.commit()
+            if updated_order.active:
+                self.order_book.register(updated_order)
+        for transaction in transactions:
+            transaction = self.session.merge(transaction)
+            self.session.commit()
     
     @classmethod 
     def propose_trade(cls, incoming: Order, 
@@ -241,12 +239,13 @@ class MatchingEngine:
         :return: A tuple of 3: a list of existing Order objects to be updated 
         into the databases, a list of new Transaction objects to be added 
         into the databases, and a list of new active orders to be added into 
-        the database.
+        the order book.
         :rtype: ty.Tuple[ty.List[Order], ty.List[Transaction]]
         """
+        # items from order_updates and transactions are merged into database
+        # items from new_active_orders are registered into the order book
         order_updates: ty.List[Order] = []
         transactions: ty.List[Transaction] = []
-        new_active_orders: ty.List[Order] = []
         
         candidates = self.order_book.get_candidates(incoming)
         
@@ -296,8 +295,7 @@ class MatchingEngine:
         if remaining.cancelled_dttm is None and remaining.size > 0:
             # If the remaining order is not cancelled yet, it is active. Add 
             # it to the active order registry
-            remaining.active = True 
-            new_active_orders.append(remaining)
+            remaining.active = True
         
         # Add incoming and remaining to order_updates. It is okay if incoming
         # and remaining are the same thing, since SQLAlchemy can handle 
@@ -322,9 +320,9 @@ class MatchingEngine:
                 candidate_remain = candidate.create_suborder()
                 candidate_remain.active = True
                 self.order_book.deregister(candidate.order_id)
-                new_active_orders.append(candidate_remain)
+                order_updates.append(candidate_remain)
                 order_updates.append(candidate)
             else:
                 # If the active order is not touched, then do nothing
                 pass
-        return order_updates, transactions, new_active_orders
+        return order_updates, transactions
