@@ -67,7 +67,80 @@ def test_aon_candidate(sql_engine: SQLEngine):
     assert order_4.size == 20
     assert order_4.price == 3
     assert order_4.parent_order_id == 3
+
+
+def test_ioc_incoming(sql_engine: SQLEngine):
+    """Check that the immediate-or-cancel policy is respected with an incoming 
+    order
+
+    :param sql_engine: [description]
+    :type sql_engine: SQLEngine
+    """
+    me = MatchingEngine("X", sql_engine)
+    test_orders = [
+        Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
+        Order(order_id=2, security_symbol="X", side="bid", size=120, price=3,
+                immediate_or_cancel=True)
+    ]
+    for test_order in test_orders:
+        me.heartbeat(debug=True, incoming=test_order)
+
+    # order 1 is first entered into order book
+    # When order 2 comes, it is first matched with order 1 to produce a trade 
+    # and a sub-order of size 20 and priced at $3, but given the IOC policy,
+    # this sub-order should be cancelled and not entered into the active orders
+    order_3 = me.session.query(Order).get(3)
+    transaction_1 = me.session.query(Transaction).get(1)
+
+    assert me.session.query(Order).count() == 3
+    assert me.session.query(Order).get(1) is test_orders[0]
+    assert me.session.query(Order).get(2) is test_orders[1]
+    assert order_3.cancelled_dttm is not None
+    assert order_3.size == 20 
+    assert order_3.price == 3
+    assert order_3.parent_order_id == 2
+    assert len(me.order_book.active_orders) == 0
+    assert transaction_1.ask_id == 1
+    assert transaction_1.bid_id == 2
+    assert transaction_1.price == 2
+    assert transaction_1.size == 100
+
+
+def test_market_order(sql_engine: SQLEngine):
+    """Check that a market order, which has no price target and is IOC, can 
+    trade properly
+
+    :param sql_engine: [description]
+    :type sql_engine: SQLEngine
+    """
+    me = MatchingEngine("X", sql_engine)
+    test_orders = [
+        Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
+        Order(order_id=2, security_symbol="X", side="bid", size=120, price=None,
+                immediate_or_cancel=True)
+    ]
+    for test_order in test_orders:
+        me.heartbeat(debug=True, incoming=test_order)
     
+    # Order 1 is first entered into order book
+    # When order 2 comes, it is first matched with order 1 to produce a trade of 
+    # 100 shares at $2, then the remaining 20 shares becomes a sub-order that 
+    # is immediately cancelled
+    order_3 = me.session.query(Order).get(3)
+    transaction_1 = me.session.query(Transaction).get(1)
+
+    assert me.session.query(Order).count() == 3
+    assert me.session.query(Order).get(1) is test_orders[0]
+    assert me.session.query(Order).get(2) is test_orders[1]
+    assert order_3.cancelled_dttm is not None 
+    assert order_3.size == 20
+    assert order_3.price is None 
+    assert order_3.parent_order_id == 2 
+    assert len(me.order_book.active_orders) == 0 
+    assert transaction_1.ask_id == 1
+    assert transaction_1.bid_id == 2
+    assert transaction_1.price == 2
+    assert transaction_1.size == 100 
 
 
 def test_simple_static_orders(sql_engine: SQLEngine):
