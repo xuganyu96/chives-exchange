@@ -9,10 +9,11 @@ Base = declarative_base()
 class Order(Base):
     __tablename__ = 'orders'
 
-    id = Column(Integer, primary_key=True)
-    security = Column(String(10), nullable=False)
+    order_id = Column(Integer, primary_key=True)
+    security_symbol = Column(String(10), nullable=False)
     side = Column(String(3), nullable=False)
     size = Column(Integer, nullable=False)
+    # market orders and sub-orders of market orders do not have target price
     price = Column(Float)
     all_or_none = Column(Boolean, nullable=False, default=False)
     immediate_or_cancel = Column(Boolean, nullable=False, default=False)
@@ -21,21 +22,24 @@ class Order(Base):
     parent_order_id = Column(Integer, unique=True)
     cancelled_dttm = Column(DateTime)
 
+    # A numerical placeholder, not a part of the database schema
+    remaining_size: int = 0
+
     def create_suborder(self):
         return Order(
-            security=self.security,
+            security_symbol=self.security_symbol,
             side=self.side,
-            size=self.size,
+            size=self.remaining_size,
             price=self.price,
             all_or_none=self.all_or_none,
             immediate_or_cancel=self.immediate_or_cancel,
             active=self.active,
-            parent_order_id=self.id,
+            parent_order_id=self.order_id,
             cancelled_dttm=self.cancelled_dttm
         )
 
     def __repr__(self):
-        return f"<Order(id={self.id}, security={self.security}, side={self.side})>"
+        return f"<Order(id={self.order_id}, symbol={self.security_symbol}, side={self.side})>"
 
     def __str__(self):
         return self.__repr__()
@@ -44,8 +48,8 @@ class Order(Base):
 class Transaction(Base):
     __tablename__ = 'transactions'
 
-    id = Column(Integer, primary_key=True)
-    security = Column(String(10), nullable=False)
+    transaction_id = Column(Integer, primary_key=True)
+    security_symbol = Column(String(10), nullable=False)
     size = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     ask_id = Column(Integer, nullable=False) # TODO: Convert to foreign key later
@@ -53,7 +57,7 @@ class Transaction(Base):
     transact_dttm = Column(DateTime, nullable=False, default=dt.datetime.utcnow)
 
     def __repr__(self):
-        return f"<Transaction(id={self.id} time={self.transact_dttm})>"
+        return f"<Transaction(id={self.transaction_id} time={self.transact_dttm})>"
 
     def __str__(self):
         return self.__repr__()
