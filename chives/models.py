@@ -13,6 +13,7 @@ class Order(Base):
     security_symbol = Column(String(10), nullable=False)
     side = Column(String(3), nullable=False)
     size = Column(Integer, nullable=False)
+    # market orders and sub-orders of market orders do not have target price
     price = Column(Float)
     all_or_none = Column(Boolean, nullable=False, default=False)
     immediate_or_cancel = Column(Boolean, nullable=False, default=False)
