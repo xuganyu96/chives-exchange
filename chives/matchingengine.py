@@ -1,12 +1,13 @@
 from contextlib import contextmanager
 import datetime as dt
 import typing as ty
+import os
 
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker
 
 from chives.models import Order, Transaction
-from chives import Session
+from chives import Session, engine
 
 
 class OrderNotFoundError(KeyError):
@@ -139,32 +140,25 @@ class MatchingEngine:
         """
         self.security_symbol = security_symbol 
         self.order_book = OrderBook(security_symbol)
-        self.order_queue_client = None # TODO: This is for a future feature
         
         # Since session does not maintain an active connection all the time, 
         # it is okay to not use a context manager with session
         Session = sessionmaker(bind=sql_engine)
         self.session = Session()
 
-    def heartbeat(self, debug: bool = False, **kwargs):
-        """The core match cycle logic
+    def heartbeat(self, incoming: Order):
+        """The matching engine operating cycle
 
-        :param debug: If true, use an externally passed in order instead of 
-        polling from the order queue, defaults to False
-        :type debug: bool, optional
+        :param incoming: the incoming order
+        :type incoming: Order
         """
-        incoming: Order = None
-        if debug:
-            incoming = kwargs['incoming']
-        else:
-            incoming: Order = self.order_queue_client.poll()
         self.session.add(incoming)
         self.session.commit()
 
         updated_orders, transactions = self.match(incoming)
 
-        # First commit all database changes; if there are sub-orders that don't 
-        # have an ID, they will have it here
+        # First commit all database changes; if there are sub-orders that 
+        # don't have an ID, they will have it here
         for updated_order in updated_orders:
             updated_order = self.session.merge(updated_order)
             self.session.commit()
