@@ -1,7 +1,7 @@
 import datetime as dt
 
 from chives import Order, Transaction, engine as sql_engine
-from chives.engine import MatchingEngine
+from chives.matchingengine import MatchingEngine
 
 ask_1 = Order(security_symbol="AAPL", side="ask", size=100, price=100)
 ask_2 = Order(security_symbol="AAPL", side="ask", size=100, price=99)
