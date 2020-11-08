@@ -23,6 +23,7 @@ docker build \
 docker run --rm \
     --name "chives-me" \
     --network host \
+    --volume /tmp:/tmp \
     chives-me:dev
 ```
 

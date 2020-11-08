@@ -344,7 +344,7 @@ def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
 
 if __name__ == '__main__':
     SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
-                                      "sqlite:///:memory:")
+                                      "sqlite:////tmp/sqlite.db")
     SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
     QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
     sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
