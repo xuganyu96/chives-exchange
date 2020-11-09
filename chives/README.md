@@ -5,20 +5,16 @@ The chives exchange has the following components
 * Submit order to inbound order queues
 * Read information from the web server
 
-## Client Queue
-* Accepts order submission from web clients
+## Trading Floor
+The trading floor is an HTTP server that accepts order submissions and cancellation requests from the web client (and exactly those two things; the rest is handled by another dedicated webserver that will be explained below).
 
-## Trading Floor 
-* A trading floor is a collection of trading floor workers
-* Each worker has access to the list of actively trading securities
-* Each worker periodically scans every single inbound client queue and pulls in one order at the time
-    * If the order is trading on an actively trading security, then send the order to the appropriate order queue
-    * If the order is trading on a new security, then spin up a new pair of order queue and order book for the new security
+When the HTTP server accepts an order submission, it checks whether it is a valid security, then checks if there is a corresponding matching engine that is running. If no corresponding matching engine instance is running, it will spawn one, then forwards the order submission to an appropriately named queue in the order queue instance.
 
-## Order queue and order book
-An order queue of a specific security accepts orders that trade on that specific security. 
+## Order Queue
+The order queue is a RabbitMQ server instance that contains as many queues as there are types of actively trading securities.
 
-An order book of a specific security periodically polls the order queue for arriving order, tries to match the arriving order with existing active orders, and executes trades based on the order's attributes such as target price and order type. 
+## Matching Engine and Order Book
+There is one matching engine instance for each type of security traded. Each matching engine runs a message callback method that heartbeats the engine instance each time an incoming order is captured. 
 
 ## Database
 Since order books hold all orders in memory, the database serves as a permanent storage device for records that are more suitable for persistence, such as transaction histories.
