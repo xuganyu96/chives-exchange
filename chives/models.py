@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -38,6 +39,41 @@ class Order(Base):
             cancelled_dttm=self.cancelled_dttm
         )
 
+    def to_json(self) -> str:
+        """Return a JSON string that captures a manually specified set of 
+        instance attributes
+
+        :return: the JSON string
+        :rtype: str
+        """
+        return json.dumps({
+            'order_id': self.order_id,
+            'security_symbol': self.security_symbol,
+            'side': self.side,
+            'size': self.size,
+            'price': self.price,
+            'all_or_none': self.all_or_none,
+            'immediate_or_cancel': self.immediate_or_cancel,
+            'active': self.active,
+            'parent_order_id': self.parent_order_id,
+            'cancelled_dttm': self.cancelled_dttm
+        })
+    
+    @classmethod
+    def from_json(cls, jstring: str):
+        """Given a JSON string, return an Order object. Given that this method 
+        is defined under the Base model class, there is no way to bind the 
+        object to any session, as the ID columns are just integers.
+        It will be up to the external session management to recover the exact 
+        mapping from the object to the database entry.
+
+        :param jstring: a JSON string
+        :type jstring: str
+        :return: The Order object that is mapped from the object
+        :rtype: Order
+        """
+        return cls(**json.loads(jstring))
+
     def __repr__(self):
         return f"<Order(id={self.order_id}, symbol={self.security_symbol}, side={self.side})>"
 
@@ -61,4 +97,3 @@ class Transaction(Base):
 
     def __str__(self):
         return self.__repr__()
-

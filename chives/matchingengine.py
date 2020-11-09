@@ -1,12 +1,15 @@
 from contextlib import contextmanager
 import datetime as dt
+import os
+import sys
 import typing as ty
 
+import pika
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker
 
-from chives.models import Order, Transaction
-from chives import Session
+from chives.models import Order, Transaction, Base
 
 
 class OrderNotFoundError(KeyError):
@@ -139,32 +142,25 @@ class MatchingEngine:
         """
         self.security_symbol = security_symbol 
         self.order_book = OrderBook(security_symbol)
-        self.order_queue_client = None # TODO: This is for a future feature
         
         # Since session does not maintain an active connection all the time, 
         # it is okay to not use a context manager with session
         Session = sessionmaker(bind=sql_engine)
         self.session = Session()
 
-    def heartbeat(self, debug: bool = False, **kwargs):
-        """The core match cycle logic
+    def heartbeat(self, incoming: Order):
+        """The matching engine operating cycle
 
-        :param debug: If true, use an externally passed in order instead of 
-        polling from the order queue, defaults to False
-        :type debug: bool, optional
+        :param incoming: the incoming order
+        :type incoming: Order
         """
-        incoming: Order = None
-        if debug:
-            incoming = kwargs['incoming']
-        else:
-            incoming: Order = self.order_queue_client.poll()
         self.session.add(incoming)
         self.session.commit()
 
         updated_orders, transactions = self.match(incoming)
 
-        # First commit all database changes; if there are sub-orders that don't 
-        # have an ID, they will have it here
+        # First commit all database changes; if there are sub-orders that 
+        # don't have an ID, they will have it here
         for updated_order in updated_orders:
             updated_order = self.session.merge(updated_order)
             self.session.commit()
@@ -326,3 +322,38 @@ class MatchingEngine:
                 # If the active order is not touched, then do nothing
                 pass
         return order_updates, transactions
+
+
+def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
+    conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
+    ch = conn.channel()
+    ch.queue_declare(queue=security_symbol)
+
+    Base.metadata.create_all(sql_engine)
+    me = MatchingEngine(security_symbol, sql_engine)
+
+    def msg_callback(ch, method, properties, body):
+        print(" [x] Received %r" % body)
+        me.heartbeat(Order.from_json(body))
+    
+    ch.basic_consume(queue=security_symbol, 
+                     on_message_callback=msg_callback,
+                     auto_ack=True)
+    ch.start_consuming()
+
+
+if __name__ == '__main__':
+    SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
+                                      "sqlite:////tmp/sqlite.db")
+    SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
+    QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
+    sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
+
+    try:
+        main(QUEUE_HOST, sql, SECURTY_SYMBOL)
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
