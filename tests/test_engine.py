@@ -1,7 +1,7 @@
 import typing as ty
 from sqlalchemy.engine import Engine as SQLEngine
 
-from chives.engine import MatchingEngine
+from chives.matchingengine import MatchingEngine
 from chives.models import Order, Transaction
 
 def test_aon_incoming(sql_engine: SQLEngine):
