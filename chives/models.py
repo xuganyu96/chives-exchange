@@ -39,7 +39,8 @@ class Order(Base):
             cancelled_dttm=self.cancelled_dttm
         )
 
-    def to_json(self) -> str:
+    @property
+    def json(self) -> str:
         """Return a JSON string that captures a manually specified set of 
         instance attributes
 
