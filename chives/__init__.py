@@ -8,7 +8,6 @@ from chives.models import Base, Order, Transaction
 
 DATABASE = "/tmp/sqlite.db" 
 engine = create_engine(f"sqlite:///{DATABASE}", echo=True)
-Base.metadata.create_all(engine)
 
 
 def create_app(test_config = None) -> Flask:
