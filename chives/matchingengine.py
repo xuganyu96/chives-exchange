@@ -328,8 +328,7 @@ def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
     ch = conn.channel()
     ch.queue_declare(queue=security_symbol)
-
-    Base.metadata.create_all(sql_engine)
+    
     me = MatchingEngine(security_symbol, sql_engine)
 
     def msg_callback(ch, method, properties, body):
