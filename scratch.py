@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 
 from sqlalchemy import create_engine
 import pika
@@ -14,9 +15,9 @@ apple_engine = MatchingEngine("AAPL", sql_engine)
 
 if __name__ == "__main__":
     msgs = [
-        ask_1.to_json(),
-        ask_2.to_json(),
-        bid_1.to_json(),
+        ask_1.json,
+        ask_2.json,
+        bid_1.json,
     ]
     
     connection = pika.BlockingConnection(
@@ -28,5 +29,7 @@ if __name__ == "__main__":
         channel.basic_publish(exchange='', routing_key='AAPL', body=msg)
     connection.close()
 
+    print("Wait for 1 second!")
+    time.sleep(1)
     print(apple_engine.session.query(Order).count())
     print(apple_engine.session.query(Transaction).count())
