@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import time
 
 from sqlalchemy import create_engine
@@ -15,9 +16,9 @@ apple_engine = MatchingEngine("AAPL", sql_engine)
 
 if __name__ == "__main__":
     msgs = [
-        ask_1.json,
-        ask_2.json,
-        bid_1.json,
+        json.dumps({'msg_type': 'incoming_order', 'msg_content': ask_1.json}),
+        json.dumps({'msg_type': 'incoming_order', 'msg_content': ask_2.json}),
+        json.dumps({'msg_type': 'incoming_order', 'msg_content': bid_1.json}),
     ]
     
     connection = pika.BlockingConnection(

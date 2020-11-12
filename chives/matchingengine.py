@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import datetime as dt
+import json
 import os
 import sys
 import typing as ty
@@ -332,8 +333,13 @@ def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
     me = MatchingEngine(security_symbol, sql_engine)
 
     def msg_callback(ch, method, properties, body):
-        print(" [x] Received %r" % body)
-        me.heartbeat(Order.from_json(body))
+        body = json.loads(body)
+        # Use body's msg_type to determine the action:
+        if body['msg_type'] == 'health':
+            # TODO: return a health check message
+            pass
+        elif body['msg_type'] == 'incoming_order':
+            me.heartbeat(Order.from_json(body['msg_content']))
     
     ch.basic_consume(queue=security_symbol, 
                      on_message_callback=msg_callback,
