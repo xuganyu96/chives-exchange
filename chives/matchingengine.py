@@ -332,6 +332,9 @@ def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
     
     me = MatchingEngine(security_symbol, sql_engine)
 
+    # TODO: Implement an asynchronous heartbeat thread to indicate that this
+    # matching engine instance is alive
+
     def msg_callback(ch, method, properties, body):
         body = json.loads(body)
         # Use body's msg_type to determine the action:
