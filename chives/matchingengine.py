@@ -336,9 +336,18 @@ def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
         body = json.loads(body)
         # Use body's msg_type to determine the action:
         if body['msg_type'] == 'health':
-            # TODO: return a health check message
+            # If the message type is "health", then the webserver will have 
+            # marked in the database that this matching engine's health is 
+            # 'unknown'. Upon receiving this message, the matching engine 
+            # should change the record to 'active'
             pass
         elif body['msg_type'] == 'incoming_order':
+            # If the message type is 'incoming_order', then the message content 
+            # is a string that encodes a JSON object (not a JSON object!)
+            # Order class' from_json method can deserialize the JSON string 
+            # and return a new Order object. Since it is an incoming order, 
+            # it is guaranteed that it is a new order that has no prior entry 
+            # in the database
             me.heartbeat(Order.from_json(body['msg_content']))
     
     ch.basic_consume(queue=security_symbol, 
