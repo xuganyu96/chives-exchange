@@ -18,7 +18,10 @@ def sql_engine() -> SQLEngine:
     :return: A SQLAlchemy engine
     :rtype: SQLEngine
     """
-    engine = create_engine("sqlite:////tmp/sqlite.db", echo=False)
+    if os.path.exists("/tmp/test.sqlite.db") \
+        and os.path.isfile("/tmp/test.sqlite.db"):
+        os.remove("/tmp/test.sqlite.db")
+    engine = create_engine("sqlite:////tmp/test.sqlite.db", echo=False)
     Base.metadata.create_all(engine)
     yield engine
-    os.remove("/tmp/sqlite.db")
+    os.remove("/tmp/test.sqlite.db")
