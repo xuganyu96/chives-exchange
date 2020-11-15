@@ -1,14 +1,14 @@
 import os 
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from chives.models import Base, Order, Transaction
+from chives.matchingengine.matchingengine import MatchingEngine as ME
 
 DATABASE = "/tmp/sqlite.db" 
-engine = create_engine(f"sqlite:///{DATABASE}", echo=True)
-Base.metadata.create_all(engine)
+me_engine = create_engine(f"sqlite:///{DATABASE}", echo=True)
 
 
 def create_app(test_config = None) -> Flask:
@@ -25,6 +25,8 @@ def create_app(test_config = None) -> Flask:
         SECRET_KEY='dev',
         DATABASE=DATABASE
     )
+    with app.app_context():
+        g.matching_engines = dict()
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
@@ -43,15 +45,20 @@ def create_app(test_config = None) -> Flask:
     @app.route("/api/submit_order", methods=("GET", "POST"))
     def submit_order():
         if request.method == "POST":
-            # TODO: implement this POST route such that it accepts a JSON object 
-            # that can be parsed into an Order object. Once the order object 
-            # is validated, send it into the order queue.
             incoming_json = request.data
             incoming_order = Order.from_json(incoming_json)
-            print(incoming_order)
+            if incoming_order.security_symbol not in g.matching_engines:
+                ob_engine = create_engine(
+                    f"sqlite:////tmp/chives_{ob_engine}.ob.sqlite")
+                with app.app_context():
+                    g.matching_engines[incoming_order.security_symbol] = ME(
+                        incoming_order.security_symbol,
+                        me_engine, ob_engine
+                    )
+            me: ME = g.matching_engines[incoming_order.security_symbol]
+            me.heartbeat(incoming_order)
             return incoming_json
         else:
-            sample_order = Order()
             return jsonify({
                 'order_id': "Integer",
                 'security_symbol': "String",
