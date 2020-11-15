@@ -308,37 +308,36 @@ class MatchingEngine:
         return mr
 
 
-def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
-    conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
-    ch = conn.channel()
-    ch.queue_declare(queue=security_symbol)
-
-    Base.metadata.create_all(sql_engine)
-    me = MatchingEngine(security_symbol, sql_engine)
-
-    def msg_callback(ch, method, properties, body):
-        print(" [x] Received %r" % body)
-        me.heartbeat(Order.from_json(body))
+# def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
+#     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
+#     ch = conn.channel()
+#     ch.queue_declare(queue=security_symbol)
     
-    ch.basic_consume(queue=security_symbol, 
-                     on_message_callback=msg_callback,
-                     auto_ack=True)
-    ch.start_consuming()
+#     me = MatchingEngine(security_symbol, sql_engine)
+
+#     def msg_callback(ch, method, properties, body):
+#         print(" [x] Received %r" % body)
+#         me.heartbeat(Order.from_json(body))
+    
+#     ch.basic_consume(queue=security_symbol, 
+#                      on_message_callback=msg_callback,
+#                      auto_ack=True)
+#     ch.start_consuming()
 
 
-if __name__ == '__main__':
-    SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
-                                      "sqlite:////tmp/sqlite.db")
-    SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
-    QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
-    sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
+# if __name__ == '__main__':
+#     SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
+#                                       "sqlite:////tmp/sqlite.db")
+#     SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
+#     QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
+#     sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
 
-    try:
-        main(QUEUE_HOST, sql, SECURTY_SYMBOL)
-    except KeyboardInterrupt:
-        print('Interrupted')
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
+#     try:
+#         main(QUEUE_HOST, sql, SECURTY_SYMBOL)
+#     except KeyboardInterrupt:
+#         print('Interrupted')
+#         try:
+#             sys.exit(0)
+#         except SystemExit:
+#             os._exit(0)
             
