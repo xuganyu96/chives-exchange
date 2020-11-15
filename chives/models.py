@@ -39,6 +39,26 @@ class Order(Base):
             cancelled_dttm=self.cancelled_dttm
         )
 
+    def copy(self):
+        """Return an Order object with exactly the same set of attributes; 
+        useful when synchronizing entries across two different ORM sessions
+
+        :return: [description]
+        :rtype: [type]
+        """
+        return Order(
+            order_id=self.order_id,
+            security_symbol=self.security_symbol,
+            side=self.side,
+            size=self.size,
+            price=self.price,
+            all_or_none=self.all_or_none,
+            immediate_or_cancel=self.immediate_or_cancel,
+            active=self.active,
+            parent_order_id=self.parent_order_id,
+            cancelled_dttm=self.cancelled_dttm
+        )
+
     @property
     def json(self) -> str:
         """Return a JSON string that captures a manually specified set of 
