@@ -38,9 +38,5 @@ def create_app(test_config = None) -> Flask:
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
-    @app.route("/debug/can_connect")
-    def hello():
-        return "You are connected to chives exchange"
     
     return app
