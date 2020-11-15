@@ -1,4 +1,5 @@
 import os 
+import typing as ty
 
 from flask import Flask, request, jsonify, g
 from sqlalchemy import create_engine
@@ -26,7 +27,7 @@ def create_app(test_config = None) -> Flask:
         DATABASE=DATABASE
     )
     with app.app_context():
-        g.matching_engines = dict()
+        g.matching_engines: ty.Dict[str, ME] = dict()
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
