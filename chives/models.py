@@ -14,6 +14,9 @@ class User(Base):
     username = Column(String(120), unique=True, nullable=False)
     password_hash = Column(String(120), nullable=False)
 
+    def __str__(self):
+        return f"<User user_id = {user_id} username={username}>"
+
 
 class Order(Base):
     __tablename__ = 'orders'
