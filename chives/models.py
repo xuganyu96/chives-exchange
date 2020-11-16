@@ -7,6 +7,14 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
+class User(Base):
+    __tablename__ = 'users'
+
+    user_id = Column(Integer, primary_key=True)
+    username = Column(String(120), unique=True, nullable=False)
+    password_hash = Column(String(120), nullable=False)
+
+
 class Order(Base):
     __tablename__ = 'orders'
 

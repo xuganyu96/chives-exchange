@@ -8,8 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from chives.models import Base, Order, Transaction
 from chives.matchingengine.matchingengine import MatchingEngine as ME
 
-DATABASE = "/tmp/sqlite.db" 
-me_engine = create_engine(f"sqlite:///{DATABASE}", echo=True)
+MAIN_DB = "chives.sqlite"
 
 
 def create_app(test_config = None) -> Flask:
@@ -24,7 +23,7 @@ def create_app(test_config = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        DATABASE=DATABASE
+        DATABASE=os.path.join(app.instance_path, MAIN_DB)
     )
     with app.app_context():
         g.matching_engines: ty.Dict[str, ME] = dict()
@@ -38,5 +37,13 @@ def create_app(test_config = None) -> Flask:
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    from chives.db import init_app 
+    init_app(app)
+
+    from chives.blueprints.auth import bp as auth_bp 
+    from chives.blueprints.debug import bp as debug_bp
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(debug_bp)
     
     return app
