@@ -1,8 +1,10 @@
 import datetime as dt
 import json
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
+from sqlalchemy import (
+    Column, Integer, String, Boolean, Float, DateTime, ForeignKey)
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -14,8 +16,34 @@ class User(Base):
     username = Column(String(120), unique=True, nullable=False)
     password_hash = Column(String(120), nullable=False)
 
+    assets = relationship(
+        "Asset", back_populates="owner", 
+        cascade="all, delete",
+        # setting passive_deletes to True means that the deletion cascade is 
+        # handled by the database via the "ON DELETE" declaration, instead by 
+        # SQLAlchemy
+        passive_deletes=True)
+    orders = relationship(
+        "Order", back_populates="owner", 
+        cascade="all, delete",
+        # setting passive_deletes to True means that the deletion cascade is 
+        # handled by the database via the "ON DELETE" declaration, instead by 
+        # SQLAlchemy
+        passive_deletes=True)
+
     def __str__(self):
         return f"<User user_id = {user_id} username={username}>"
+
+
+class Asset(Base):
+    __tablename__ = 'assets'
+
+    owner_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), 
+                        primary_key=True)
+    asset_symbol = Column(String(10), primary_key=True)
+    asset_amount = Column(Float, nullable=False)
+
+    owner = relationship("User", back_populates="assets")
 
 
 class Order(Base):
@@ -32,7 +60,10 @@ class Order(Base):
     active = Column(Boolean, nullable=False, default=False)
     # good_util_cancelled = Column(Boolean, nullable=False) is out of scope
     parent_order_id = Column(Integer, unique=True)
+    owner_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"))
     cancelled_dttm = Column(DateTime)
+
+    owner = relationship("User", back_populates="orders")
 
     # A numerical placeholder, not a part of the database schema
     remaining_size: int = 0
@@ -120,8 +151,14 @@ class Transaction(Base):
     security_symbol = Column(String(10), nullable=False)
     size = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
-    ask_id = Column(Integer, nullable=False) # TODO: Convert to foreign key later
-    bid_id = Column(Integer, nullable=False) # TODO: Convert to foreign key later
+    # With asks and bids, I am not going to define any relationships because 
+    # the concept is strange: what is order.transactions? Is it all transactions 
+    # that this order is involved in? Or is it specific to when this order is 
+    # a ask vs a bid?
+    ask_id = Column(Integer, 
+        ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=False)
+    bid_id = Column(Integer, 
+        ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=False)
     transact_dttm = Column(DateTime, nullable=False, default=dt.datetime.utcnow)
 
     def __repr__(self):
