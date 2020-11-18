@@ -7,36 +7,30 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash 
 
 from chives.db import get_session as get_db_session
+from chives.forms import RegistrationForm
 from chives.models import User
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @bp.route("/register", methods=("GET", "POST"))
 def register():
-    if request.method == "POST":
-        username = request.form['username']
-        password = request.form['password']
+    form = RegistrationForm(request.form)
+    if request.method == "POST" and form.validate_on_submit():
         db_session = get_db_session()
-        error = None 
-
-        if not username:
-            error = "Username is required"
-        elif not password:
-            error = "Password is required"
-        elif db_session.query(User).filter(User.username == username).first() \
-            is not None:
-            error = f"User {username} is already registered"
-        
-        if error is None:
-            new_user = User(username=username, 
-                password_hash=generate_password_hash(password)
-            )
+        if db_session.query(User).filter(
+            User.username==form.username.data).first() is not None:
+            form.username.errors.append("Username already taken!")
+        else:
+            new_user: User = User(
+                username=form.username.data, 
+                password_hash=generate_password_hash(form.password.data))
             db_session.add(new_user)
             db_session.commit()
-            return redirect(url_for('auth.login'))
-        
-        flash(error)
-    return render_template("auth/register.html")
+            print("User created")
+
+            return redirect(url_for("auth.login"))
+
+    return render_template("auth/register.html", form=form)
 
 
 @bp.route("/login", methods=("GET", "POST"))
