@@ -1,134 +1,285 @@
-html {
-    font-family: sans-serif;
-    background: #eee;
-    padding: 1rem;
-  }
-  
-  body {
-    max-width: 960px;
-    margin: 0 auto;
-    background: white;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    font-family: serif;
-    color: #377ba8;
-    margin: 1rem 0;
-  }
-  
-  a {
-    color: #377ba8;
-  }
-  
-  hr {
-    border: none;
-    border-top: 1px solid lightgray;
-  }
-  
-  nav {
-    background: lightgray;
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem;
-  }
-  
-  nav h1 {
-    flex: auto;
+:root {
+    --google-drive-logo-src: "https://www.gstatic.com/images/branding/product/1x/drive_48dp.png";
+    --text-primary-color: #202124;
+    --text-secondary-color: #bbbbbb;
+    --text-box-right-margin: 1.2em;
+    --border-color: #cccccc;
+    --mdc-theme-primary: #1a73e8;
+    --mdc-theme-primary-highlight: #5894e4;
+    --mdc-wave-primary: #5894e4A6;
+}
+
+body {
+    font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;
+}
+
+h1 {
+    /* h1 tag is used for "Sign-in" and "Create your account" */
+    font-size: 24px;
+    font-weight: 400;
     margin: 0;
-  }
-  
-  nav h1 a {
+    color: var(--text-primary-color);
+    text-align: center;
+}
+
+input[type=text], input[type=password] {
+    /* I am using materialize CSS so much can be omitted */
+    min-height: 2em;
+    color: var(--text-primary-color);
+}
+
+input[type=text]:focus, input[type=password]:focus {
+    border-bottom: var(--mdc-theme-primary) 1px solid !important;
+    box-shadow: 0 1px 0 0 var(--mdc-theme-primary) !important;
+}
+
+input[type=submit] {
+    color: white;
+}
+
+input::placeholder {
+    color: var(--text-secondary-color);
+}
+
+a {
+    margin: 0;
+    padding: 0 !important;
+    color: var(--mdc-theme-primary) !important;
     text-decoration: none;
-    padding: 0.25rem 0.5rem;
-  }
-  
-  nav ul  {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  nav ul li a, nav ul li span, header .action {
-    display: block;
-    padding: 0.5rem;
-  }
-  
-  .content {
-    padding: 0 1rem 1rem;
-  }
-  
-  .content > header {
-    border-bottom: 1px solid lightgray;
-    display: flex;
-    align-items: flex-end;
-  }
-  
-  .content > header h1 {
-    flex: auto;
-    margin: 1rem 0 0.25rem 0;
-  }
-  
-  .flash {
-    margin: 1em 0;
-    padding: 1em;
-    background: #cae6f6;
-    border: 1px solid #377ba8;
-  }
-  
-  .post > header {
-    display: flex;
-    align-items: flex-end;
-    font-size: 0.85em;
-  }
-  
-  .post > header > div:first-of-type {
-    flex: auto;
-  }
-  
-  .post > header h1 {
-    font-size: 1.5em;
-    margin-bottom: 0;
-  }
-  
-  .post .about {
-    color: slategray;
-    font-style: italic;
-  }
-  
-  .post .body {
-    white-space: pre-line;
-  }
-  
-  .content:last-child {
-    margin-bottom: 0;
-  }
-  
-  .content form {
-    margin: 1em 0;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+    font-family: Roboto;
+    font-size: 14px;
+    text-transform: none !important;
+}
+
+small {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.main-view {
+    /* The outermost container that uses a margin to ensure that there is a padding on the top */
     display: flex;
     flex-direction: column;
-  }
-  
-  .content label {
-    font-weight: bold;
-    margin-bottom: 0.5em;
-  }
-  
-  .content input, .content textarea {
-    margin-bottom: 1em;
-  }
-  
-  .content textarea {
-    min-height: 12em;
-    resize: vertical;
-  }
-  
-  input.danger {
-    color: #cc2f2e;
-  }
-  
-  input[type=submit] {
-    align-self: start;
-    min-width: 10em;
-  }
+    align-items: center;
+    box-sizing: border-box;
+    margin-top: 22.5vh;
+}
+
+.auth-panel-base {
+    /* This is the class that provides the outermost visible border */
+    width: 450px;
+    min-width: 450px;
+    box-sizing: border-box;
+    padding: 48px 40px 36px;
+    border: var(--border-color) 1px solid;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* justify-content: start; // is this necessary? */
+}
+
+.auth-panel-base div {
+    width: 100%;
+}
+
+/* My approach to the panel design follows the guidelines of fewer components in a single layer + more layers */
+/* 
+Layer 1: Panel
+    logo on the top
+    content on the bottom
+Layer 2: Content
+    header on the top
+    form on the bottom
+Layer 3a: Content header
+    title on the top
+    sub-text on the bottom
+Layer 3b: Content form
+    the cluster of inputs on the top
+    the cluster of action buttons on the bottom
+Layer 4: Action button cluster
+    alternative action on the left
+    -   for the sign-in page, alternative action is "create account"
+    -   for the sign-up page, alternative action is "sign in"
+    canonical action on the right (usually a "Next")
+
+*/
+.auth-panel-logo-wrapper {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    max-height: max-content;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-panel-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.auth-content-headers-wrapper {
+    padding: 16px 0px 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.auth-content-header-title-wrapper {
+    text-align: center;
+    padding: 16px 0px 0px;
+}
+
+.auth-content-header-subtext-wrapper {
+    text-align: center;
+    padding: 8px 0px 0px;
+}
+
+.auth-content-form-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0px 0px;
+}
+
+.auth-content-form-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.auth-content-form-input-wrapper > div:not(:last-child) {
+    padding-bottom: 1em;
+}
+
+.form-input-username-cluster-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.full-name-inputs-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-name-inputs-wrapper > div {
+    flex-grow: 1;
+}
+
+.full-name-inputs-wrapper > div:not(:last-child) {
+    margin-right: var(--text-box-right-margin);
+}
+
+.username-inputs-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-input-password-cluster-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-duplet-inputs-wrapper {
+    flex-grow: 1;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.password-duplet-inputs-wrapper > div:not(:last-child) {
+    margin-right: var(--text-box-right-margin);
+}
+
+.password1-wrapper, .password2-wrapper {
+    flex-grow: 1;
+}
+
+.password-peek-wrapper {
+    width: fit-content !important;
+    display: flex; 
+    align-items: center; 
+}
+
+.pwd-peek-btn {
+    display: flex;
+    align-items: center;
+}
+
+.password-peek-wrapper > .btn-flat {
+    padding: 0.4em;
+    text-align: center;
+    vertical-align: center;
+}
+
+.password-peek-wrapper > .btn-flat:hover {
+    background: transparent;
+}
+
+.password-peek-wrapper > .btn-flat:active {
+    color: red;
+    background: #ff000066;
+}
+
+.auth-content-form-actions-wrapper {
+    display: flex;
+    justify-items: flex-start;
+    margin: 32px 0px;
+}
+
+.auth-content-form-alternative-action-wrapper {
+    flex-grow: 1;
+    align-self: center;
+}
+
+
+.auth-content-form-canonical-action-wrapper {
+    width: fit-content !important;
+    justify-self: end;
+}
+
+.h1-subtext {
+    /* Only used in span tag that wraps subtext such as "to continue to Google Drive" */
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-primary-color);
+}
+
+.btn {
+    background-color: var(--mdc-theme-primary);
+}
+
+.btn:hover {
+    background-color: var(--mdc-theme-primary-highlight);
+}
+
+.btn:focus {
+    background-color: var(--mdc-theme-primary-highlight);
+}
+
+.btn-flat:focus {
+    background-color: transparent;
+}
+
+@media(max-width: 480px) {
+    .main-view {
+        margin-top: 0;
+        justify-content: center;
+    }
+    .auth-panel-base {
+        border: none;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 48px 20px 36px;
+        flex-direction: column;
+        justify-content: start;
+        min-width: 380px;
+    }
+}
