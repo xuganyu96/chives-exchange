@@ -2,12 +2,15 @@ import os
 import typing as ty
 
 from flask import Flask, request, jsonify, g
+from flask_login import LoginManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from chives.models import Base, Order, Transaction
 from chives.matchingengine.matchingengine import MatchingEngine as ME
 
+
+login_manager = LoginManager()
 
 def create_app(test_config = None) -> Flask:
     """Create and configure the application
@@ -38,6 +41,7 @@ def create_app(test_config = None) -> Flask:
 
     from chives.db import init_app 
     init_app(app)
+    login_manager.init_app(app)
 
     from chives.blueprints.auth import bp as auth_bp 
     from chives.blueprints.debug import bp as debug_bp

@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from chives.blueprints.auth import login_required
+from flask_login import login_required
 
 bp = Blueprint("debug", __name__, url_prefix="/debug")
 

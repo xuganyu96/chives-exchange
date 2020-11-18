@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 
+from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, DateTime, ForeignKey)
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,7 +10,7 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()
 
 
-class User(Base):
+class User(UserMixin, Base):
     __tablename__ = 'users'
 
     user_id = Column(Integer, primary_key=True)
@@ -33,6 +34,9 @@ class User(Base):
 
     def __str__(self):
         return f"<User user_id = {user_id} username={username}>"
+    
+    def get_id(self):
+        return self.user_id
 
 
 class Asset(Base):

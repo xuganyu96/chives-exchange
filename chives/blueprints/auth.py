@@ -4,13 +4,28 @@ from flask import (
     Blueprint, flash, g as flask_g, redirect, render_template, request, 
     session as flask_session, url_for
 )
+from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash 
 
+from chives import login_manager
 from chives.db import get_session as get_db_session
 from chives.forms import RegistrationForm, LoginForm
 from chives.models import User
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+@login_manager.user_loader 
+def load_user(user_id):
+    db_session = get_db_session()
+    if user_id is not None:
+        return db_session.query(User).get(user_id)
+    return None
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect(url_for("auth.login"))
+
 
 @bp.route("/register", methods=("GET", "POST"))
 def register():
@@ -42,8 +57,7 @@ def login():
             User).filter(User.username==form.username.data).first()
         if (user is not None) and check_password_hash(user.password_hash, 
                                                       form.password.data):
-            flask_session.clear()
-            flask_session['user_id'] = user.user_id 
+            login_user(user)
             return redirect(url_for('debug.can_connect'))
         else:
             form.password.errors.append(
@@ -53,26 +67,5 @@ def login():
 
 @bp.route("/logout")
 def logout():
-    flask_session.clear()
+    logout_user()
     return redirect(url_for("auth.login"))
-
-
-@bp.before_app_request 
-def load_logged_in_user():
-    user_id = flask_session.get('user_id')
-
-    if user_id is None:
-        flask_g.user = None 
-    else:
-        db_session = get_db_session()
-        flask_g.user = db_session.query(User).get(user_id)
-
-
-def login_required(view):
-    @functools.wraps(view)
-    def authenticated_view(**kwargs):
-        if flask_g.user is None:
-            return redirect(url_for("auth.login"))
-        return view(**kwargs)
-    
-    return authenticated_view
