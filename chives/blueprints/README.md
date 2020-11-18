@@ -4,7 +4,16 @@ The following routes should be implemented:
 * `/auth`  
 blueprint for handling user management and authentication
   * `/auth/register`  
-  Allows a user to sign up using a username/password combination
+  Allows a user to sign up using a username/password combination  
+  __QA__:  
+    * remove the development database, then go onto the registration 
+  page and sign-up with proper username/password combination, and check that 
+  the user is redirected to the login page. 
+    * Return to the registration page,  and sign-up against using the same 
+    username, this time checking that an error message shows up regarding 
+    duplicate username. 
+    * Reload the registration page, sign-up using mismatched passwords, then 
+    check that there is a error message regarding mismatched passwords
   * `/auth/login`  
   Allows user to log in
   * `/auth/logout`  
