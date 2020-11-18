@@ -7,7 +7,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash 
 
 from chives.db import get_session as get_db_session
-from chives.forms import RegistrationForm
+from chives.forms import RegistrationForm, LoginForm
 from chives.models import User
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -35,32 +35,26 @@ def register():
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+    form = LoginForm(request.form)
+    if request.method == "POST" and form.validate_on_submit():
         db_session = get_db_session()
-        error = None
-        user: User = db_session.query(User).filter(
-            User.username == username).first()
-        
-        if user is None:
-            error = "Incorrect username"
-        elif not check_password_hash(user.password_hash, password):
-            error = "Incorrect password"
-        
-        if error is None:
+        user = db_session.query(
+            User).filter(User.username==form.username.data).first()
+        if (user is not None) and check_password_hash(user.password_hash, 
+                                                      form.password.data):
             flask_session.clear()
             flask_session['user_id'] = user.user_id 
-            return redirect(url_for("index"))
-        
-        flash(error)
+            return redirect(url_for('debug.can_connect'))
+        else:
+            form.password.errors.append(
+                "Login failed; check your username and password")
     
-    return render_template("auth/login.html")
+    return render_template("auth/login.html", form=form)
 
 @bp.route("/logout")
 def logout():
     flask_session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("auth.login"))
 
 
 @bp.before_app_request 

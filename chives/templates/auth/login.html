@@ -1,15 +1,72 @@
-{% extends 'base.html' %}
-
-{% block header %}
-  <h1>{% block title %}Log In{% endblock %}</h1>
-{% endblock %}
-
-{% block content %}
-  <form method="post">
-    <label for="username">Username</label>
-    <input name="username" id="username" required>
-    <label for="password">Password</label>
-    <input type="password" name="password" id="password" required>
-    <input type="submit" value="Log In">
-  </form>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <!-- My CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Sign in</title>
+</head>
+<body>
+  <div class="main-view">
+    <div class="auth-panel-base">
+      <div class="auth-panel-logo-wrapper">
+        <img src="{{ url_for('static', filename='do_as_you_wish.jpeg') }}">
+      </div>
+      <div class="auth-panel-content-wrapper">
+        <div class="auth-content-headers-wrapper">
+          <div class="auth-cotent-header-title-wrapper">
+            <h1>Sign in</h1>
+          </div>
+          <div class="auth-content-header-subtext-wrapper">
+            <span class="h1-subtext">to continue to Chives Exchange</span>
+          </div>
+        </div>
+        <div class="auth-content-form-wrapper">
+          <form style="width:100%;" method="POST" action="/auth/login">
+            {{ form.hidden_tag() }}
+            <div class="auth-content-form-input-wrapper">
+              <!-- The children of "auth-content-form-input-wrapper" are different between "register" and "login" -->
+              <div class="auth-content-form-input-cluster-wrapper">
+                <div class="username-input-wrapper">
+                  <div>{{ form.username(placeholder="Username") }}</div>
+                  <div>
+                    {% if form.username.errors %}
+                      <ul>{% for error in form.username.errors %}<li style="color: red;">{{ error }}</li> {% endfor %}</ul>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="password-input-wrapper">
+                  <div>{{ form.password(placeholder="Password") }}</div>
+                  <div>
+                    {% if form.password.errors %}
+                      <ul>{% for error in form.password.errors %}<li style="color: red;">{{ error }}</li> {% endfor %}</ul>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <!-- <div class="auth-content-form-password-recov-wrapper">
+                <a href="#">Forgot password?</a>
+              </div> -->
+            </div>
+            <div class="auth-content-form-actions-wrapper">
+              <div class="auth-content-form-alternative-action-wrapper">
+                <a href="{{ url_for('auth.register') }}">Create account</a>
+              </div>
+              <div class="auth-content-form-canonical-action-wrapper">
+                {{ form.submit(class="waves-effect waves-light btn") }}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

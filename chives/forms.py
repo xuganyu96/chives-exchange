@@ -11,3 +11,11 @@ class RegistrationForm(Form):
     )
     confirm = PasswordField("confirm password")
     submit = SubmitField("Sign up")
+
+class LoginForm(Form):
+    username = StringField(
+        label="username", validators=[validators.InputRequired()])
+    password = PasswordField(
+        label="password", validators=[validators.InputRequired()])
+    
+    submit = SubmitField("Log in")
