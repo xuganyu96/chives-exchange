@@ -25,19 +25,21 @@ blueprint for handling user management and authentication
     `/debug/is_authenticated`, this time checking a redirect to the login page.
   * `/auth/logout`  
   Allows the user to log out
-* `/portfolio`(login required)  
-For displaying a summary of the user's portfolio: what stocks does this user 
-hold, how much cash does it have
-* `/market` (login required)
-  * `/market/<security_symbol: str>`  
-  For the given symbol, display the current market price (price of the latest 
-  transaction), a graph of traded prices that can have day/week/month/year 
-  zooms (similar to the summary card displayed when searching for stocks on 
-  Google)
-* `/trade` (login required)
-  * `/trade/submit_order`  
-  Submit new order through a form
-  * `/trade/view_orders`
-  View the status of submitted orders
-  * `/trade/view_transactions` 
-  View transactions
+* `/exchange`  
+  this route redirects to `/exchange/portfolio`
+  * `/exchange/dashboard`(login required)  
+  For displaying a summary of the user's portfolio: what stocks does this user 
+  hold, how much cash does it have
+  * `/exchange/market` (login required)
+    * `/exchange/market/<security_symbol: str>`  
+    For the given symbol, display the current market price (price of the latest 
+    transaction), a graph of traded prices that can have day/week/month/year 
+    zooms (similar to the summary card displayed when searching for stocks on 
+    Google)
+  * `/exchange/trade` (login required)
+    * `/exchange/trade/submit_order`  
+    Submit new order through a form
+    * `/exchange/trade/view_orders`
+    View the status of submitted orders
+    * `/exchange/trade/view_transactions` 
+    View transactions
