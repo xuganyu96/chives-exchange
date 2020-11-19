@@ -23,8 +23,7 @@ def create_app(test_config = None) -> Flask:
     # Note that __name__ evaluates to chives in this instance
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, "chives.sqlite")
+        SECRET_KEY='dev'
     )
     with app.app_context():
         g.matching_engines: ty.Dict[str, ME] = dict()
