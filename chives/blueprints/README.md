@@ -15,7 +15,14 @@ blueprint for handling user management and authentication
     * Reload the registration page, sign-up using mismatched passwords, then 
     check that there is a error message regarding mismatched passwords
   * `/auth/login`  
-  Allows user to log in
+  Allows user to log in  
+  __QA__:  
+    * Remove the development database, then from the `/auth/register` route, 
+    create a new user
+    * Login with the new user, confirm that the `/debug/is_authenticated` route 
+    displays a correct "you are connected as `username`" 
+    * Use the `/auth/logout` route to logout, then go to 
+    `/debug/is_authenticated`, this time checking a redirect to the login page.
   * `/auth/logout`  
   Allows the user to log out
 * `/portfolio`(login required)  
