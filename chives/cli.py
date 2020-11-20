@@ -19,14 +19,22 @@ parser_start_engine.add_argument("-q", "--queue-host",
     dest="queue_host",
     default="localhost")
 parser_start_engine.add_argument("-s", "--sql-uri",
-    help="Database URI; defaults to sqlite:////tmp/sqlite.db",
+    help="Database URI; defaults to sqlite:////tmp/chives.sqlite",
     dest="sql_uri",
-    default="sqlite:////tmp/sqlite.db")
+    default="sqlite:////tmp/chives.sqlite")
 
 # Create the parser for initdb command
 parser_initdb = subparsers.add_parser('initdb', 
     help="Initialize the database")
 parser_initdb.add_argument("-d", "--database",
-    help="Database URI; defaults to sqlite:////tmp/sqlite.db",
+    help="Database URI; defaults to sqlite:////tmp/chives.sqlite",
     dest="sql_uri",
-    default="sqlite:////tmp/sqlite.db")
+    default="sqlite:////tmp/chives.sqlite")
+
+# Create the parser for initdb command
+parser_initdb = subparsers.add_parser('webserver', 
+    help="Initialize the database")
+parser_initdb.add_argument("-p", "--port",
+    help="Flask application port, defaults to 5000",
+    dest="webserver_port",
+    default="5000")

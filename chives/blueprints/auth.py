@@ -7,7 +7,7 @@ from flask import (
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash 
 
-from chives import login_manager
+from chives.webserver import login_manager
 from chives.db import get_db as get_db_session
 from chives.forms import RegistrationForm, LoginForm
 from chives.models import User
