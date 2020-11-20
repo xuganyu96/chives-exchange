@@ -78,16 +78,16 @@ class OrderBook:
         :rtype: ty.List[Order]
         """
         candidates: ty.List[Order] = []
-        cond = None
+        cond = (Order.security_symbol == incoming.security_symbol)
         sort_key = None
         if incoming.side == "bid":
-            cond = Order.side == "ask"
+            cond = cond & (Order.side == "ask")
             if incoming.price:
                 cond = cond & (Order.price <= incoming.price)
             if sort:
                 sort_key = Order.price.asc()
         else:
-            cond = (Order.side == "bid")
+            cond = cond & (Order.side == "bid")
             if incoming.price:
                 cond = cond & (Order.price >= incoming.price)
             if sort:

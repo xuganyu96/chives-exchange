@@ -149,6 +149,7 @@ def test_simple_static_orders(sql_engine: SQLEngine, ob_sql_engine):
     me = MatchingEngine("X", sql_engine, ob_sql_engine)
 
     static_orders = [
+        Order(order_id=0, security_symbol="Y", side="ask", size=100, price=100),
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=100),
         Order(order_id=2, security_symbol="X", side="ask", size=100, price=99),
         Order(order_id=3, security_symbol="X", side="bid", size=120, price=101)]
@@ -173,9 +174,9 @@ def test_simple_static_orders(sql_engine: SQLEngine, ob_sql_engine):
     order_2: Order = me.session.query(Order).get(2)
     order_3: Order = me.session.query(Order).get(3)
     order_4: Order = me.session.query(Order).get(4)
-    assert order_1 is static_orders[0]
-    assert order_2 is static_orders[1]
-    assert order_3 is static_orders[2]
+    assert order_1 is static_orders[1]
+    assert order_2 is static_orders[2]
+    assert order_3 is static_orders[3]
     assert order_4.parent_order_id == 1
     assert order_4.price == order_1.price 
     assert order_4.size == (order_1.size + order_2.size - order_3.size)
