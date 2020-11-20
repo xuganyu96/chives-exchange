@@ -12,14 +12,19 @@ docker run --rm \
     rabbitmq:3-management
 ```
 
-Second run matching engine
+Second run matching engine：
 
-Finally, run the test script to see if the system works.
+```bash
+python -m chives start_engine
+```
+
+Finally, run the test script to see if the system works:
+
+```bash
+python scratch.py
+```
 
 ## Run the flask application:
 ```bash
-export FLASK_APP=chives
-export FLASK_ENV=development
-
-flask run
+python -m chives webserver
 ```
