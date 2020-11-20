@@ -12,8 +12,6 @@ parser.add_argument("-v", "--verbose",
 # Create the parser for the start_engine command
 parser_start_engine = subparsers.add_parser('start_engine', 
     help="Start an instance of a matching engine")
-parser_start_engine.add_argument("security_symbol", 
-    help="The symbol of the security that this matching engine operates on")
 parser_start_engine.add_argument("-q", "--queue-host", 
     help="hostname of the RabbitMQ server; defaults to localhost",
     dest="queue_host",

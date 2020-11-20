@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     if args.subcommand == "start_engine":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
-        me_main(args.queue_host, sql_engine, args.security_symbol)
+        me_main(args.queue_host, sql_engine)
     if args.subcommand == "initdb":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
         Base.metadata.create_all(sql_engine)

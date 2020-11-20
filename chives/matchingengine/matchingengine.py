@@ -298,18 +298,18 @@ class MatchingEngine:
         return mr
 
 
-def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
+def main(queue_host: str, sql_engine: SQLEngine):
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
     ch = conn.channel()
-    ch.queue_declare(queue=security_symbol)
+    ch.queue_declare(queue="incoming_order")
     
-    me = MatchingEngine(security_symbol, sql_engine)
+    me = MatchingEngine(sql_engine)
 
     def msg_callback(ch, method, properties, body):
         print(" [x] Received %r" % body)
         me.heartbeat(Order.from_json(body))
     
-    ch.basic_consume(queue=security_symbol, 
+    ch.basic_consume(queue="incoming_order", 
                      on_message_callback=msg_callback,
                      auto_ack=True)
     ch.start_consuming()
