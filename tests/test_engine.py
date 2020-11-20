@@ -11,7 +11,7 @@ def test_aon_incoming(sql_engine: SQLEngine, ob_sql_engine: SQLEngine):
     :param sql_engine: 
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine("X", sql_engine, ob_sql_engine)
+    me = MatchingEngine(sql_engine, ob_sql_engine)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=1),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=2,
@@ -39,7 +39,7 @@ def test_aon_candidate(sql_engine: SQLEngine, ob_sql_engine):
     :param sql_engine: 
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine("X", sql_engine, ob_sql_engine)
+    me = MatchingEngine(sql_engine, ob_sql_engine)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2,
                 all_or_none=True),
@@ -72,7 +72,7 @@ def test_ioc_incoming(sql_engine: SQLEngine, ob_sql_engine):
     :param sql_engine: [description]
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine("X", sql_engine, ob_sql_engine)
+    me = MatchingEngine(sql_engine, ob_sql_engine)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=3,
@@ -109,7 +109,7 @@ def test_market_order(sql_engine: SQLEngine, ob_sql_engine):
     :param sql_engine: [description]
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine("X", sql_engine, ob_sql_engine)
+    me = MatchingEngine(sql_engine, ob_sql_engine)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=None,
@@ -146,7 +146,7 @@ def test_simple_static_orders(sql_engine: SQLEngine, ob_sql_engine):
     :param sql_engine: the SQLAlchemy engine used for connecting to database
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine("X", sql_engine, ob_sql_engine)
+    me = MatchingEngine(sql_engine, ob_sql_engine)
 
     static_orders = [
         Order(order_id=0, security_symbol="Y", side="ask", size=100, price=100),

@@ -29,8 +29,7 @@ class OrderBook:
     main database's ID.
     """
 
-    def __init__(self, security_symbol: str, 
-                 sql_engine: SQLEngine = _DEFAULT_OB_ENGINE):
+    def __init__(self, sql_engine: SQLEngine = _DEFAULT_OB_ENGINE):
         """Upon instantiation, create the session object, and initialize the 
         database using the engine provided
 
@@ -39,7 +38,6 @@ class OrderBook:
         :param sql_engine: [description], defaults to _DEFAULT_OB_ENGINE
         :type sql_engine: SQLEngine, optional
         """
-        self.security_symbol = security_symbol 
         Session = sessionmaker(bind=sql_engine)
         self.session = Session()
 
@@ -63,17 +61,13 @@ class OrderBook:
         else:
             return order
     
-    def get_candidates(self, incoming: Order, 
-                             sort: bool = True) -> ty.List[Order]:
+    def get_candidates(self, incoming: Order) -> ty.List[Order]:
         """Given an incoming order, return all active orders that are on the 
         opposite sides, and that offer better price than the incoming order, if 
         the incoming order has a target price
 
         :param incoming: the incoming order
         :type incoming: Order
-        :param sort: If true, sort the candidates from best offer to worst 
-        offer , defaults to True
-        :type sort: bool, optional
         :return: A list of candidate orders
         :rtype: ty.List[Order]
         """
@@ -84,14 +78,12 @@ class OrderBook:
             cond = cond & (Order.side == "ask")
             if incoming.price:
                 cond = cond & (Order.price <= incoming.price)
-            if sort:
-                sort_key = Order.price.asc()
+            sort_key = Order.price.asc()
         else:
             cond = cond & (Order.side == "bid")
             if incoming.price:
                 cond = cond & (Order.price >= incoming.price)
-            if sort:
-                sort_key = Order.price.desc()
+            sort_key = Order.price.desc()
         
         return self.session.query(Order).filter(cond).order_by(sort_key).all()
 
@@ -123,22 +115,18 @@ class MatchingEngine:
     with active orders
     """
 
-    def __init__(self, security_symbol: str, 
-                       me_sql_engine: SQLEngine,
+    def __init__(self, me_sql_engine: SQLEngine,
                        ob_sql_engine: SQLEngine = _DEFAULT_OB_ENGINE):
         """Initialize the matching engine by instantiating the order book and 
         creating a engine-bound session
 
-        :param security_symbol: [description]
-        :type security_symbol: str
         :param me_sql_engine: The engine for connecting to the main database
         :type me_sql_engine: SQLEngine
         :param ob_sql_engine: The engine for connecting to the order book 
         database, defaults to _DEFAULT_OB_ENGINE
         :type ob_sql_engine: SQLEngine, optional
         """
-        self.security_symbol = security_symbol 
-        self.ob = OrderBook(security_symbol, ob_sql_engine)
+        self.ob = OrderBook(ob_sql_engine)
 
         Session = sessionmaker(bind=me_sql_engine)
         self.session = Session()
@@ -200,8 +188,10 @@ class MatchingEngine:
         :param incoming: the incoming order
         :type incoming: Order
         """
-        self.session.add(incoming)
-        self.session.commit()
+        if (incoming.order_id is None) \
+            or (self.session.query(Order).get(incoming.order_id) is None):
+            self.session.add(incoming)
+            self.session.commit()
 
         # The self.match method does not commit any actual changes to any 
         # database. Instead, it returns the set of changes that need to be 
@@ -308,36 +298,36 @@ class MatchingEngine:
         return mr
 
 
-# def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
-#     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
-#     ch = conn.channel()
-#     ch.queue_declare(queue=security_symbol)
+def main(queue_host: str, sql_engine: SQLEngine, security_symbol: str):
+    conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
+    ch = conn.channel()
+    ch.queue_declare(queue=security_symbol)
     
-#     me = MatchingEngine(security_symbol, sql_engine)
+    me = MatchingEngine(security_symbol, sql_engine)
 
-#     def msg_callback(ch, method, properties, body):
-#         print(" [x] Received %r" % body)
-#         me.heartbeat(Order.from_json(body))
+    def msg_callback(ch, method, properties, body):
+        print(" [x] Received %r" % body)
+        me.heartbeat(Order.from_json(body))
     
-#     ch.basic_consume(queue=security_symbol, 
-#                      on_message_callback=msg_callback,
-#                      auto_ack=True)
-#     ch.start_consuming()
+    ch.basic_consume(queue=security_symbol, 
+                     on_message_callback=msg_callback,
+                     auto_ack=True)
+    ch.start_consuming()
 
 
-# if __name__ == '__main__':
-#     SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
-#                                       "sqlite:////tmp/sqlite.db")
-#     SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
-#     QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
-#     sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
+if __name__ == '__main__':
+    SQLALCHEMY_ENGINE_URI = os.getenv("SQLALCHEMY_ENGINE_URI", 
+                                      "sqlite:////tmp/sqlite.db")
+    SECURTY_SYMBOL = os.getenv("SECURTY_SYMBOL", "AAPL")
+    QUEUE_HOST = os.getenv("QUEUE_HOST", "localhost")
+    sql = create_engine(SQLALCHEMY_ENGINE_URI, echo=True)
 
-#     try:
-#         main(QUEUE_HOST, sql, SECURTY_SYMBOL)
-#     except KeyboardInterrupt:
-#         print('Interrupted')
-#         try:
-#             sys.exit(0)
-#         except SystemExit:
-#             os._exit(0)
+    try:
+        main(QUEUE_HOST, sql, SECURTY_SYMBOL)
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
             
