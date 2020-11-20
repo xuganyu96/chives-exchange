@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- My CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Dashboard</title>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; height: 80px; align-items: center;"> <!--This is the top navbar-->
+      <div style="flex-grow: 0.1;"> <!--LOGO-->
+        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+        <input type="text" style="border: 0px;" placeholder="Search security symbol">
+        <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+          <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
+        <span style="font-size: 2rem;">Net Worth</span>
+        <span style="font-size: 4rem;">$0,000,000.00</span>
+      </div>
+      <div style="flex: 1 1 300px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
+        <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
+        <div style="flex: 1 1 auto; overflow-x: scroll; overflow-y: hidden; white-space: nowrap; display: flex;">
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">Cash</span>
+              <span>$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+          <div class="card z-depth-2" style="flex: 0 1 15rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+            <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span class="card-title">XXXXX</span>
+              <span>000,000,000 shares</span>
+            </div>
+            <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+              <span class="grey-text" style="font-size: 16px;">Market Value</span>
+              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

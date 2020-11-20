@@ -44,7 +44,9 @@ def create_app(test_config = None) -> Flask:
 
     from chives.blueprints.auth import bp as auth_bp 
     from chives.blueprints.debug import bp as debug_bp
+    from chives.blueprints.exchange import bp as ex_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(debug_bp)
+    app.register_blueprint(ex_bp)
     
     return app
