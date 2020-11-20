@@ -12,9 +12,10 @@ docker run --rm \
     rabbitmq:3-management
 ```
 
-Second run matching engine：
+Second, initialize database structure and run matching engine：
 
 ```bash
+python -m chives initdb
 python -m chives start_engine
 ```
 
