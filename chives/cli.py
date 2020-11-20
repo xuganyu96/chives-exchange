@@ -1,4 +1,5 @@
 import argparse 
+from chives.db import SQLALCHEMY_URI
 
 parser = argparse.ArgumentParser(prog="chives")
 subparsers = parser.add_subparsers(help="subcommand help", required=True,
@@ -17,17 +18,17 @@ parser_start_engine.add_argument("-q", "--queue-host",
     dest="queue_host",
     default="localhost")
 parser_start_engine.add_argument("-s", "--sql-uri",
-    help="Database URI; defaults to sqlite:////tmp/chives.sqlite",
+    help=f"Database URI; defaults to {SQLALCHEMY_URI}",
     dest="sql_uri",
-    default="sqlite:////tmp/chives.sqlite")
+    default=f"{SQLALCHEMY_URI}")
 
 # Create the parser for initdb command
 parser_initdb = subparsers.add_parser('initdb', 
     help="Initialize the database")
 parser_initdb.add_argument("-d", "--database",
-    help="Database URI; defaults to sqlite:////tmp/chives.sqlite",
+    help=f"Database URI; defaults to {SQLALCHEMY_URI}",
     dest="sql_uri",
-    default="sqlite:////tmp/chives.sqlite")
+    default=f"{SQLALCHEMY_URI}")
 
 # Create the parser for initdb command
 parser_initdb = subparsers.add_parser('webserver', 
