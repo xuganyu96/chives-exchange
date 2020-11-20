@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 SQLALCHEMY_URI = os.getenv("SQLALCHEMY_URI", "sqlite:////tmp/chives.sqlite")
 
-engine = create_engine(SQLALCHEMY_URI, echo=True)
+engine = create_engine(SQLALCHEMY_URI)
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
