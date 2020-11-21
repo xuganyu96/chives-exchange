@@ -10,7 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from chives.webserver import login_manager
 from chives.db import get_db as get_db_session
 from chives.forms import RegistrationForm, LoginForm
-from chives.models import User
+from chives.models.models import User, Asset
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -41,7 +41,14 @@ def register():
                 password_hash=generate_password_hash(form.password.data))
             db_session.add(new_user)
             db_session.commit()
-            print("User created")
+            # Each user receives $10,000.00 of cash upon registration
+            initial_cash = Asset(
+                owner_id=new_user.user_id,
+                asset_symbol="_CASH",
+                asset_amount=10000.00
+            )
+            db_session.add(initial_cash)
+            db_session.commit()
 
             return redirect(url_for("auth.login"))
 
