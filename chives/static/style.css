@@ -268,6 +268,11 @@ Layer 4: Action button cluster
     background-color: transparent;
 }
 
+.checkbox-mdc-primary[type="checkbox"].filled-in:checked + span:not(.lever):after 
+{
+    background-color: var(--mdc-theme-primary);
+}
+
 @media(max-width: 480px) {
     .main-view {
         margin-top: 0;

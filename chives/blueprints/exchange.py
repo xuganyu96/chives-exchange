@@ -4,9 +4,39 @@ from flask import (
 )
 from flask_login import login_required, current_user
 
+from chives.db import get_db
+from chives.forms import OrderSubmitForm
+from chives.models.models import Order
+
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
 @bp.route("/dashboard", methods=("GET",))
 @login_required
 def dashboard():
     return render_template("exchange/dashboard.html")
+
+@bp.route("/submit_order", methods=("GET", "POST"))
+@login_required
+def submit_order():
+    form = OrderSubmitForm(request.form)
+    if request.method == "POST" and form.validate_on_submit():
+        new_order: Order = Order(
+            security_symbol=form.security_symbol.data, 
+            side=form.side.data, 
+            size=form.size.data, 
+            price=form.price.data,
+            all_or_none=form.all_or_none.data,
+            immediate_or_cancel=form.immediate_or_cancel.data,
+            owner_id=current_user.user_id
+        )
+        if new_order.price is None:
+            print("Market order")
+            new_order.immediate_or_cancel = True
+        db = get_db()
+        db.add(new_order)
+        db.commit()
+
+        ## TODO: Submit the order's JSON into the queue
+
+        return redirect(url_for("exchange.dashboard"))
+    return render_template("exchange/submit_order.html", form=form)
