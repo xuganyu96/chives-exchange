@@ -188,6 +188,13 @@ class MatchingEngine:
         :param incoming: the incoming order
         :type incoming: Order
         """
+        # The canonical way of receiving orders is from order submissions 
+        # from webserver to the order queue, and since the webserver already 
+        # commits the order into the main database, there should not be the 
+        # need to commit to the main database again.
+        # However, for debugging and testing purposes, we allow uncommitted 
+        # Order objects to be entered, hence the logic below for checking 
+        # whether the incoming order is in the main database or not.
         if (incoming.order_id is None) \
             or (self.session.query(Order).get(incoming.order_id) is None):
             self.session.add(incoming)
