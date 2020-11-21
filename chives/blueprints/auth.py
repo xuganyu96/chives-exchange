@@ -58,7 +58,7 @@ def login():
         if (user is not None) and check_password_hash(user.password_hash, 
                                                       form.password.data):
             login_user(user)
-            return redirect(url_for('debug.is_authenticated'))
+            return redirect(url_for('exchange.dashboard'))
         else:
             form.password.errors.append(
                 "Login failed; check your username and password")
