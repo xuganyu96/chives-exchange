@@ -7,6 +7,6 @@ from flask_login import login_required, current_user
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
 @bp.route("/dashboard", methods=("GET",))
-# @login_required
+@login_required
 def dashboard():
     return render_template("exchange/dashboard.html")
