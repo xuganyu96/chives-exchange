@@ -5,13 +5,14 @@ import time
 from sqlalchemy import create_engine
 import pika
 
+from chives.db import SQLALCHEMY_URI
 from chives.models import Order, Transaction
 from chives.matchingengine.matchingengine import MatchingEngine
 
 ask_1 = Order(security_symbol="AAPL", side="ask", size=100, price=100)
 ask_2 = Order(security_symbol="AAPL", side="ask", size=100, price=99)
 bid_1 = Order(security_symbol="AAPL", side="bid", size=120, price=101)
-sql_engine = create_engine("sqlite:////tmp/chives.sqlite", echo=False)
+sql_engine = create_engine(SQLALCHEMY_URI, echo=False)
 apple_engine = MatchingEngine(sql_engine)
 
 if __name__ == "__main__":
