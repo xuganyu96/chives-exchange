@@ -16,5 +16,5 @@ if __name__ == "__main__":
         Base.metadata.create_all(sql_engine)
     if args.subcommand == "webserver":
         app = create_app()
-        app.run(port=args.webserver_port)
+        app.run(port=args.webserver_port, debug=args.debug)
     

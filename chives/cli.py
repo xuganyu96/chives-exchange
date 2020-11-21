@@ -31,9 +31,13 @@ parser_initdb.add_argument("-d", "--database",
     default=f"{SQLALCHEMY_URI}")
 
 # Create the parser for initdb command
-parser_initdb = subparsers.add_parser('webserver', 
+parser_webserver = subparsers.add_parser('webserver', 
     help="Initialize the database")
-parser_initdb.add_argument("-p", "--port",
+parser_webserver.add_argument("-p", "--port",
     help="Flask application port, defaults to 5000",
     dest="webserver_port",
     default="5000")
+parser_webserver.add_argument("-d", "--debug",
+    help="If used, will make the Flask app run in debug mode",
+    dest="debug",
+    action="store_true")
