@@ -78,12 +78,12 @@ def start_company():
             symbol=form.company_symbol.data,
             name=form.company_name.data,
             initial_value=form.input_cash.data,
-            founder_id=current_user.user_id
+            founder_id=current_user.user_id,
+            market_price=form.input_cash.data / form.size.data
         )
         db.add(new_company)
 
         founder_cash = db.query(Asset).get((current_user.user_id, "_CASH"))
-        print(founder_cash, form.input_cash.data)
         founder_cash.asset_amount -= float(form.input_cash.data)
 
         # Since this is a new company, the founder will definitely not have 
