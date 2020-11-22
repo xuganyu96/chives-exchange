@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 import pika
 
 from chives.db import SQLALCHEMY_URI
-from chives.models.models import Order, Transaction, Asset, User
+from chives.models.models import Order, Transaction, Asset, User, Company
 from chives.matchingengine.matchingengine import MatchingEngine
 
 ask_1 = Order(security_symbol="AAPL", side="ask", size=100, price=100)
