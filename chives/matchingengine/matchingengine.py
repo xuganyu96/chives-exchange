@@ -215,8 +215,6 @@ class MatchingEngine:
         # them:
         # 
         # Read the module README for how each type of match result is handled
-        print(f"incoming's cancelled_dttm is {match_result.incoming.cancelled_dttm}")
-        print(f"remain's cancelled_dttm is {match_result.incoming_remain.cancelled_dttm}")
         merged_incoming = self.session.merge(match_result.incoming)
         self.session.commit()
         
@@ -295,12 +293,14 @@ class MatchingEngine:
                     company = self.session.query(Company).get(
                         transaction.security_symbol)
                     company.market_price = transaction.price
+                    self.session.commit()
         
         if not self.ignore_user_logic:
             # If the incoming order is a selling order that is not 
             # entirely fulfilled, and whose remaining part is cancelled, 
             # then return the assets back to the seller
-            if match_result.incoming_remain.cancelled_dttm is not None:
+            if match_result.incoming_remain is not None \
+                and (match_result.incoming_remain.cancelled_dttm is not None):
                 print(match_result.incoming_remain.owner_id)
                 print(match_result.incoming_remain.security_symbol)
                 source_asset = self.session.query(Asset).get(
