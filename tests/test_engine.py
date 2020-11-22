@@ -4,14 +4,14 @@ from sqlalchemy.engine import Engine as SQLEngine
 from chives.matchingengine.matchingengine import MatchingEngine
 from chives.models import Order, Transaction
 
-def test_aon_incoming(sql_engine: SQLEngine, ob_sql_engine: SQLEngine):
+def test_aon_incoming(sql_engine: SQLEngine):
     """Test that for an all-or-none incoming order, the policy is properly 
     respected
 
     :param sql_engine: 
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine(sql_engine, ob_sql_engine, ignore_user_logic=True)
+    me = MatchingEngine(sql_engine, ignore_user_logic=True)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=1),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=2,
@@ -32,14 +32,14 @@ def test_aon_incoming(sql_engine: SQLEngine, ob_sql_engine: SQLEngine):
     assert test_orders[1].active
 
 
-def test_aon_candidate(sql_engine: SQLEngine, ob_sql_engine):
+def test_aon_candidate(sql_engine: SQLEngine):
     """Test that for an all-or-none incoming order, the policy is properly 
     respected
 
     :param sql_engine: 
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine(sql_engine, ob_sql_engine, ignore_user_logic=True)
+    me = MatchingEngine(sql_engine, ignore_user_logic=True)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2,
                 all_or_none=True),
@@ -65,14 +65,14 @@ def test_aon_candidate(sql_engine: SQLEngine, ob_sql_engine):
     assert order_4.parent_order_id == 3
 
 
-def test_ioc_incoming(sql_engine: SQLEngine, ob_sql_engine):
+def test_ioc_incoming(sql_engine: SQLEngine):
     """Check that the immediate-or-cancel policy is respected with an incoming 
     order
 
     :param sql_engine: [description]
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine(sql_engine, ob_sql_engine, ignore_user_logic=True)
+    me = MatchingEngine(sql_engine, ignore_user_logic=True)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=3,
@@ -102,14 +102,14 @@ def test_ioc_incoming(sql_engine: SQLEngine, ob_sql_engine):
     assert transaction_1.size == 100
 
 
-def test_market_order(sql_engine: SQLEngine, ob_sql_engine):
+def test_market_order(sql_engine: SQLEngine):
     """Check that a market order, which has no price target and is IOC, can 
     trade properly
 
     :param sql_engine: [description]
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine(sql_engine, ob_sql_engine, ignore_user_logic=True)
+    me = MatchingEngine(sql_engine, ignore_user_logic=True)
     test_orders = [
         Order(order_id=1, security_symbol="X", side="ask", size=100, price=2),
         Order(order_id=2, security_symbol="X", side="bid", size=120, price=None,
@@ -139,14 +139,14 @@ def test_market_order(sql_engine: SQLEngine, ob_sql_engine):
     assert transaction_1.size == 100 
 
 
-def test_simple_static_orders(sql_engine: SQLEngine, ob_sql_engine):
+def test_simple_static_orders(sql_engine: SQLEngine):
     """Given a fixed set of orders, check that when each of them is entered,
     the matching occurs correctly
 
     :param sql_engine: the SQLAlchemy engine used for connecting to database
     :type sql_engine: SQLEngine
     """
-    me = MatchingEngine(sql_engine, ob_sql_engine, ignore_user_logic=True)
+    me = MatchingEngine(sql_engine, ignore_user_logic=True)
 
     static_orders = [
         Order(order_id=0, security_symbol="Y", side="ask", size=100, price=100),

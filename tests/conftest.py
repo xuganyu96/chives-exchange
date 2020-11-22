@@ -25,19 +25,3 @@ def sql_engine() -> SQLEngine:
     Base.metadata.create_all(engine)
     yield engine
     os.remove("/tmp/test.sqlite.db")
-
-
-@pytest.fixture(scope="function") 
-def ob_sql_engine() -> SQLEngine:
-    """Create a SQLite database in the /tmp directory, yield the connection,
-    then destroy it by deleting the database file
-
-    :return: A SQLAlchemy engine
-    :rtype: SQLEngine
-    """
-    if os.path.exists("/tmp/ob.sqlite.db") \
-        and os.path.isfile("/tmp/ob.sqlite.db"):
-        os.remove("/tmp/ob.sqlite.db")
-    engine = create_engine("sqlite:////tmp/ob.sqlite.db", echo=False)
-    yield engine
-    os.remove("/tmp/ob.sqlite.db")
