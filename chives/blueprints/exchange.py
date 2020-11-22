@@ -15,13 +15,22 @@ bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 @bp.route("/dashboard", methods=("GET",))
 @login_required
 def dashboard():
+    db = get_db()
     # Any amount of cash will be displayed
     cash = [a for a in current_user.assets if (a.asset_symbol == "_CASH")][0]
     # Empty assets for stocks will not be displayed
     stocks = [a for a in current_user.assets 
         if (a.asset_symbol != "_CASH") and (a.asset_amount > 0)]
-    return render_template(
-        "exchange/dashboard.html", cash=cash, stocks=stocks)
+
+    # Compute stocks' market value by company's market price * asset_amount
+    # Then compute net worth by summing up cash and stocks market value
+    net_worth = cash.asset_amount 
+    for stock in stocks:
+        market_price = db.query(Company).get(stock.asset_symbol).market_price
+        stock.market_value = market_price * stock.asset_amount
+        net_worth += stock.market_value
+    return render_template("exchange/dashboard.html", 
+        cash=cash, stocks=stocks, net_worth=net_worth)
 
 @bp.route("/submit_order", methods=("GET", "POST"))
 @login_required

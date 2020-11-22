@@ -34,7 +34,7 @@
     <div style="display: flex; flex-direction: column">
       <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
         <span style="font-size: 2rem;">Net Worth</span>
-        <span style="font-size: 4rem;">$0,000,000.00</span>
+        <span style="font-size: 4rem;">${{ "%.2f"|format(net_worth) }}</span>
       </div>
       <div style="flex: 1 1 330px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
         <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
@@ -53,7 +53,7 @@
             </div>
             <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
               <span class="grey-text" style="font-size: 16px;">Market Value</span>
-              <span class="grey-text" style="font-size: 16px;">$000,000,000,000.00</span>
+              <span class="grey-text" style="font-size: 16px;">${{ "%.2f"|format(stock.market_value) }}</span>
             </div>
           </div>
           {% endfor %}
