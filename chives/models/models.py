@@ -102,6 +102,7 @@ class Order(Base):
             immediate_or_cancel=self.immediate_or_cancel,
             active=self.active,
             parent_order_id=self.parent_order_id,
+            owner_id=self.owner_id,
             cancelled_dttm=self.cancelled_dttm
         )
 
@@ -122,6 +123,7 @@ class Order(Base):
             'all_or_none': self.all_or_none,
             'immediate_or_cancel': self.immediate_or_cancel,
             'active': self.active,
+            'owner_id': self.owner_id,
             'parent_order_id': self.parent_order_id,
             'cancelled_dttm': self.cancelled_dttm
         })

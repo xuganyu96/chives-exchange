@@ -218,7 +218,9 @@ class MatchingEngine:
         # them:
         # 
         # Read the module README for how each type of match result is handled
-        # match_result.incoming = self.session.merge(match_result.incoming)
+        print(f"incoming's cancelled_dttm is {match_result.incoming.cancelled_dttm}")
+        print(f"remain's cancelled_dttm is {match_result.incoming_remain.cancelled_dttm}")
+        merged_incoming = self.session.merge(match_result.incoming)
         self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
@@ -291,6 +293,22 @@ class MatchingEngine:
                     )
                     buyer_cash.asset_amount -= cash_volume
                     self.session.commit()
+        
+        if not self.ignore_user_logic:
+            # If the incoming order is a selling order that is not 
+            # entirely fulfilled, and whose remaining part is cancelled, 
+            # then return the assets back to the seller
+            if match_result.incoming_remain.cancelled_dttm is not None:
+                print(match_result.incoming_remain.owner_id)
+                print(match_result.incoming_remain.security_symbol)
+                source_asset = self.session.query(Asset).get(
+                    (match_result.incoming_remain.owner_id, 
+                     match_result.incoming_remain.security_symbol)
+                )
+                refund_size = match_result.incoming_remain.size
+                print(f"Refunding {refund_size} shares")
+                source_asset.asset_amount += refund_size
+                self.session.commit()
     
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
