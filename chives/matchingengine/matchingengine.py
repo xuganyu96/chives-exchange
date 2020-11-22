@@ -6,7 +6,7 @@ import typing as ty
 import pika
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 from chives.models.models import Base, Order, Transaction, Asset, User, Company
 
@@ -29,23 +29,15 @@ class OrderBook:
     main database's ID.
     """
 
-    def __init__(self, sql_engine: SQLEngine = _DEFAULT_OB_ENGINE):
-        """Upon instantiation, create the session object, and initialize the 
-        database using the engine provided
+    def __init__(self, main_db_session: Session):
+        """The main_db_session is most likely going to be passed in by the 
+        matching engine, but for debugging purpose, other sessions can be 
+        passed in, as well
 
-        :param security_symbol: [description]
-        :type security_symbol: str
-        :param sql_engine: [description], defaults to _DEFAULT_OB_ENGINE
-        :type sql_engine: SQLEngine, optional
+        :param main_db_session: [description]
+        :type main_db_session: Session
         """
-        Session = sessionmaker(bind=sql_engine)
-        self.session = Session()
-
-        # Create the table schemas if they don't exist; in addition, 
-        # the order book is only concerned with orders, so there is no
-        # need to create other tables
-        Base.metadata.create_all(sql_engine, 
-            [Base.metadata.tables[Order.__tablename__]], checkfirst=True)
+        self.session = main_db_session
 
     def get_order(self, order_id: int) -> Order:
         """Read an order by its order_id
@@ -62,9 +54,9 @@ class OrderBook:
             return order
     
     def get_candidates(self, incoming: Order) -> ty.List[Order]:
-        """Given an incoming order, return all active orders that are on the 
-        opposite sides, and that offer better price than the incoming order, if 
-        the incoming order has a target price
+        """Given an incoming order, return all active orders of the same 
+        security symbol, that are on the opposite sides, and that offer better 
+        price than the incoming order, if the incoming order has a target price
 
         :param incoming: the incoming order
         :type incoming: Order
@@ -72,7 +64,8 @@ class OrderBook:
         :rtype: ty.List[Order]
         """
         candidates: ty.List[Order] = []
-        cond = (Order.security_symbol == incoming.security_symbol)
+        cond = (Order.security_symbol == incoming.security_symbol) \
+            & (Order.active == True)
         sort_key = None
         if incoming.side == "bid":
             cond = cond & (Order.side == "ask")
@@ -116,24 +109,19 @@ class MatchingEngine:
     """
 
     def __init__(self, me_sql_engine: SQLEngine,
-                       ob_sql_engine: SQLEngine = _DEFAULT_OB_ENGINE,
                        ignore_user_logic: bool = False):
         """Initialize the matching engine by instantiating the order book and 
         creating a engine-bound session
 
         :param me_sql_engine: The engine for connecting to the main database
         :type me_sql_engine: SQLEngine
-        :param ob_sql_engine: The engine for connecting to the order book 
-        database, defaults to _DEFAULT_OB_ENGINE
-        :type ob_sql_engine: SQLEngine, optional
         :param ignore_user_logic: if True, the matching engine will not modify 
         user assets after transactions are committed. Defaults to False
         :type ignore_user_logic: bool
         """
-        self.ob = OrderBook(ob_sql_engine)
-
         Session = sessionmaker(bind=me_sql_engine)
         self.session = Session()
+        self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
     
     @classmethod 
@@ -215,7 +203,10 @@ class MatchingEngine:
         # them:
         # 
         # Read the module README for how each type of match result is handled
-        merged_incoming = self.session.merge(match_result.incoming)
+        #
+        # Here is a standalone session commit that is specifically for 
+        # committing mutations applied to the incoming_order, such as changing 
+        # "active" to True, as well as adding "cancelled_dttm"
         self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
@@ -223,26 +214,16 @@ class MatchingEngine:
             self.session.add(match_result.incoming_remain)
             self.session.commit()
         
-        if match_result.incoming_remain is not None\
-            and match_result.incoming_remain.active:
-            self.ob.session.add(match_result.incoming_remain.copy())
-            self.ob.session.commit()
         
         if len(match_result.deactivated) > 0:
             for deactivated in match_result.deactivated:
                 main_entry = self.session.query(Order).get(deactivated)
                 main_entry.active = False 
-                main_entry = self.session.merge(main_entry)
-                ob_entry = self.ob.session.query(Order).get(deactivated)
-                self.ob.session.delete(ob_entry)
             self.session.commit()
-            self.ob.session.commit()
 
         if match_result.reactivated is not None:
             self.session.add(match_result.reactivated)
             self.session.commit()
-            self.ob.session.add(match_result.reactivated.copy())
-            self.ob.session.commit()
 
         if len(match_result.transactions) > 0:
             for transaction in match_result.transactions:
@@ -337,7 +318,6 @@ class MatchingEngine:
                 if transaction is not None:
                     incoming.remaining_size -= transaction.size 
                     candidate.remaining_size -= transaction.size 
-                    candidate.active = False
                     mr.transactions.append(transaction)
                     mr.deactivated.append(candidate.order_id)
                     # If the candidate is partially fulfilled, then create its 
