@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker
 
-from chives.models.models import Base, Order, Transaction, Asset, User
+from chives.models.models import Base, Order, Transaction, Asset, User, Company
 
 
 _DEFAULT_OB_ENGINE = create_engine("sqlite:///:memory:", echo=False)
@@ -290,6 +290,11 @@ class MatchingEngine:
                     )
                     buyer_cash.asset_amount -= cash_volume
                     self.session.commit()
+
+                    # Update the company's market price
+                    company = self.session.query(Company).get(
+                        transaction.security_symbol)
+                    company.market_price = transaction.price
         
         if not self.ignore_user_logic:
             # If the incoming order is a selling order that is not 
