@@ -27,9 +27,10 @@ class User(UserMixin, Base):
     orders = relationship(
         "Order", back_populates="owner", 
         cascade="all, delete",
-        # setting passive_deletes to True means that the deletion cascade is 
-        # handled by the database via the "ON DELETE" declaration, instead by 
-        # SQLAlchemy
+        passive_deletes=True)
+    companies = relationship(
+        "Company", back_populates="owner", 
+        cascade="all, delete",
         passive_deletes=True)
 
     def __str__(self):
@@ -48,6 +49,19 @@ class Asset(Base):
     asset_amount = Column(Float, nullable=False)
 
     owner = relationship("User", back_populates="assets")
+
+
+class Company(Base):
+    """Abstracting the individual securities/companies
+    """
+    __tablename__ = "companies"
+
+    symbol = Column(String(10), nullable=False, primary_key=True)
+    name = Column(String(50), nullable=False)
+    initial_value = Column(Float, nullable=False)
+    founder_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"))
+
+    owner = relationship("User", back_populates="companies")
 
 
 class Order(Base):
