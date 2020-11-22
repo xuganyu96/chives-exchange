@@ -193,9 +193,6 @@ class MatchingEngine:
         :param incoming: the incoming order
         :type incoming: Order
         """
-        # TODO: There is a problem in which the first order's immediate-or-cancel
-        # is not property respected
-        
         # The canonical way of receiving orders is from order submissions 
         # from webserver to the order queue, and since the webserver already 
         # commits the order into the main database, there should not be the 
