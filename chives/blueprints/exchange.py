@@ -39,11 +39,6 @@ def submit_order():
 
     form = OrderSubmitForm(request.form)
     if request.method == "POST" and form.validate_on_submit():
-        # TODO: implement logic that checks if the user has sufficient asset to 
-        # place this order. For buying orders, check if the remaining cash 
-        # is greater than size * (market price, aka most recent transaction 
-        # price); for selling orders, check if the remaining stocks is greater 
-        # than size
         new_order: Order = Order(
             security_symbol=form.security_symbol.data, 
             side=form.side.data, 
@@ -53,6 +48,13 @@ def submit_order():
             immediate_or_cancel=form.immediate_or_cancel.data,
             owner_id=current_user.user_id
         )
+        if new_order.side == "ask":
+            user_existing_asset = get_db().query(Asset).get(
+                (current_user.user_id, new_order.security_symbol))
+            if user_existing_asset is None or user_existing_asset.asset_amount < new_order.size:
+                return redirect(url_for("exchange.error", error_msg="Insufficient assets"))
+            else:
+                user_existing_asset.asset_amount -= new_order.size
         if new_order.price is None:
             print("Market order")
             new_order.immediate_or_cancel = True
