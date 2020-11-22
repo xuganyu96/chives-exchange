@@ -39,6 +39,11 @@ def submit_order():
 
     form = OrderSubmitForm(request.form)
     if request.method == "POST" and form.validate_on_submit():
+        # TODO: implement logic that checks if the user has sufficient asset to 
+        # place this order. For buying orders, check if the remaining cash 
+        # is greater than size * (market price, aka most recent transaction 
+        # price); for selling orders, check if the remaining stocks is greater 
+        # than size
         new_order: Order = Order(
             security_symbol=form.security_symbol.data, 
             side=form.side.data, 

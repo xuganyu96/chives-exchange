@@ -242,6 +242,9 @@ class MatchingEngine:
         if len(match_result.transactions) > 0:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
+            # TODO: implement logic for changing related users' assets based 
+            # on the transaction, including a switch for the matching engine to 
+            # run in standalone mode, where any user logic will be skipped
             self.session.commit()
     
     def match(self, incoming: Order) -> MatchResult:
