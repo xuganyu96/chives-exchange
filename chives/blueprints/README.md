@@ -30,6 +30,8 @@ blueprint for handling user management and authentication
   * `/exchange/dashboard` (login required)  
   For displaying a summary of the user's portfolio: what stocks does this user 
   hold, how much cash does it have
+  * `/exchange/start_company` (login required)
+  Create a company by filling out an IPO form
   * `/exchange/market/<security_symbol: str>` (login required)    
   For the given symbol, display the current market price (price of the latest 
   transaction), a graph of traded prices that can have day/week/month/year 
