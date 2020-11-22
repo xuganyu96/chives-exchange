@@ -28,6 +28,9 @@ This table is updated each time a user submits an order (subtract cash if it is
 a buy order, or subtract shares if it is a sell order), and each time a 
 transaction is committed into the database.
 
+Note: any assets can have `asset_amount` reduced to 0, at which point they will 
+not be displayed onto the dashboard, except for cash.
+
 ## Orders 
 Each entry in the `orders` table represents a single stock order, or a suborder 
 of a partially fulfilled order. In development environment, `owner_id` can be 
