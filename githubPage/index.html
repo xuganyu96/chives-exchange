@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+  <style>
+    .code {
+      font-family: 'Courier New', Courier, monospace;
+      color: darkblue;
+    }
+    .code-comment {
+      font-family: 'Courier New', Courier, monospace;
+      color: grey;
+    }
+
+  </style>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; flex-direction: column">
+      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2rem 0rem; padding: 2rem;"> <!--Title-->
+        <span style="font-size: 4rem;">Chives Exchange</span>
+        <span style="font-size: 2rem;">Simple stock exchange with a Flask-powered web client</span>
+      </div>
+      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
+        <div><span style="font-size: 2rem;">Getting started</span></div>
+        <div>
+          <p style="font-size: 1rem;">
+            Begin by setting up a Python 3 environment, then clone the repository, and do 
+            <span class="code">pip install -r requirements.txt</span> to install the Python dependency. <br>
+            In addition to Python 3, the exchange also depends on RabbitMQ as the message broker that forwards 
+            stock order submission from the webserver to the matching engine. The easist way to get RabbitMQ running 
+            on a local environment is through Docker: <br>
+            <span class="code">
+              docker run -d --rm --name "rabbitmq" -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+            </span>
+            <br><br>
+            After RabbitMQ starts running, initialize the database instance by calling 
+            <span class="code">python -m chives initdb</span>. By default, this invokes SQLAlchemy's ORM module to 
+            create a SQLite database located at /tmp/chives.sqlite, and create the SQL schema within this SQLite 
+            database. The final two components can be each set to run through chives' CLI: <br><br>
+            <span class="code">
+              python -m chives start_engine <span class="code-comment"># to start a matching engine instance</span><br>
+              python -m chives webserver <span class="code-comment"># to start running the Flask application</span>
+            </span>
+            <br><br>
+            By default, the Flask application runs on port 5000, and you can begin by visiting the user registration 
+            page at <span class="code">localhost:5000/auth/register</span>
+            <br><br>
+            To teardown the demo, first exit out of matching engine and webserver. Run 
+            <span class="code">docker stop rabbitmq </span> to stop the RabbitMQ server, and remove the SQLite database 
+            by deleting the database file: <span class="code">rm /tmp/chives.sqlite</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
