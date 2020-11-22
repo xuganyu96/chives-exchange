@@ -100,6 +100,7 @@ class Order(Base):
             immediate_or_cancel=self.immediate_or_cancel,
             active=self.active,
             parent_order_id=self.order_id,
+            owner_id=self.owner_id,
             cancelled_dttm=self.cancelled_dttm
         )
 
