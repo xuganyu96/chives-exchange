@@ -204,9 +204,7 @@ class MatchingEngine:
         # 
         # Read the module README for how each type of match result is handled
         #
-        # Here is a standalone session commit that is specifically for 
-        # committing mutations applied to the incoming_order, such as changing 
-        # "active" to True, as well as adding "cancelled_dttm"
+        self.session.merge(match_result.incoming)
         self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
@@ -282,8 +280,6 @@ class MatchingEngine:
             # then return the assets back to the seller
             if match_result.incoming_remain is not None \
                 and (match_result.incoming_remain.cancelled_dttm is not None):
-                print(match_result.incoming_remain.owner_id)
-                print(match_result.incoming_remain.security_symbol)
                 source_asset = self.session.query(Asset).get(
                     (match_result.incoming_remain.owner_id, 
                      match_result.incoming_remain.security_symbol)
@@ -329,7 +325,8 @@ class MatchingEngine:
         mr.incoming = incoming
         if incoming.remaining_size == incoming.size:
             mr.incoming_remain = mr.incoming
-            mr.incoming_remain.active = True
+            mr.incoming_remain.active = mr.incoming.active = True
+            print(mr.incoming.active, mr.incoming_remain.active)
         elif incoming.remaining_size > 0:
             mr.incoming_remain = incoming.create_suborder()
             mr.incoming_remain.active = True
