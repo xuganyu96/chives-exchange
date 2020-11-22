@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker
 
-from chives.models import Base, Order, Transaction
+from chives.models.models import Base, Order, Transaction, Asset, User
 
 
 _DEFAULT_OB_ENGINE = create_engine("sqlite:///:memory:", echo=False)
@@ -116,7 +116,8 @@ class MatchingEngine:
     """
 
     def __init__(self, me_sql_engine: SQLEngine,
-                       ob_sql_engine: SQLEngine = _DEFAULT_OB_ENGINE):
+                       ob_sql_engine: SQLEngine = _DEFAULT_OB_ENGINE,
+                       ignore_user_logic: bool = False):
         """Initialize the matching engine by instantiating the order book and 
         creating a engine-bound session
 
@@ -125,11 +126,15 @@ class MatchingEngine:
         :param ob_sql_engine: The engine for connecting to the order book 
         database, defaults to _DEFAULT_OB_ENGINE
         :type ob_sql_engine: SQLEngine, optional
+        :param ignore_user_logic: if True, the matching engine will not modify 
+        user assets after transactions are committed. Defaults to False
+        :type ignore_user_logic: bool
         """
         self.ob = OrderBook(ob_sql_engine)
 
         Session = sessionmaker(bind=me_sql_engine)
         self.session = Session()
+        self.ignore_user_logic = ignore_user_logic
     
     @classmethod 
     def propose_trade(cls, incoming: Order, 
@@ -210,7 +215,7 @@ class MatchingEngine:
         # them:
         # 
         # Read the module README for how each type of match result is handled
-        match_result.incoming = self.session.merge(match_result.incoming)
+        # match_result.incoming = self.session.merge(match_result.incoming)
         self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
@@ -242,10 +247,47 @@ class MatchingEngine:
         if len(match_result.transactions) > 0:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
-            # TODO: implement logic for changing related users' assets based 
-            # on the transaction, including a switch for the matching engine to 
-            # run in standalone mode, where any user logic will be skipped
-            self.session.commit()
+                self.session.commit()
+                if not self.ignore_user_logic:
+                    # Identify the seller and the buyer.
+                    ask = self.session.query(Order).get(transaction.ask_id)
+                    bid = self.session.query(Order).get(transaction.bid_id)
+                    seller: User = ask.owner
+                    buyer: User = bid.owner
+
+                    # Seller gains cash and loses stocks, but the stock share 
+                    # deduction happens at order's submission, so we only need 
+                    # to be concerned with gaining cash.
+                    cash_volume = transaction.price * transaction.size 
+                    seller_cash: Asset = self.session.query(Asset).get(
+                        (seller.user_id, "_CASH")
+                    )
+                    seller_cash.asset_amount += cash_volume
+                    self.session.commit()
+
+                    # Buyer gains stock and loses cash, both of which will 
+                    # happen here, since there is no telling what price the 
+                    # buyer will get when the buyer places an order.
+                    #
+                    # First check if the buyer has had this kind of asset before
+                    buyer_stock = self.session.query(Asset).get(
+                        (buyer.user_id, transaction.security_symbol)
+                    )
+                    # If the buyer has this kind of asset, then add to it; 
+                    # otherwise, create a new entry
+                    if buyer_stock is None:
+                        self.session.add(
+                            Asset(owner_id=buyer.user_id,
+                                  asset_symbol=transaction.security_symbol,
+                                  asset_amount=transaction.size))
+                    else:
+                        buyer_stock.asset_amount += transaction.size
+                    # Remove cash from buyer
+                    buyer_cash = self.session.query(Asset).get(
+                        (buyer.user_id, "_CASH")
+                    )
+                    buyer_cash.asset_amount -= cash_volume
+                    self.session.commit()
     
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
