@@ -7,8 +7,8 @@ import pika
 from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
-from chives.forms import OrderSubmitForm
-from chives.models.models import Order, Asset
+from chives.forms import OrderSubmitForm, StartCompanyForm
+from chives.models.models import Order, Asset, Company
 
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
@@ -66,6 +66,37 @@ def submit_order():
 
         return redirect(url_for("exchange.dashboard"))
     return render_template("exchange/submit_order.html", form=form)
+
+
+@bp.route("/start_company", methods=("GET", "POST"))
+@login_required 
+def start_company():
+    form = StartCompanyForm(request.form)
+    db = get_db()
+    if request.method == "POST" and form.validate_on_submit():
+        new_company: Company = Company(
+            symbol=form.company_symbol.data,
+            name=form.company_name.data,
+            initial_value=form.input_cash.data,
+            founder_id=current_user.user_id
+        )
+        db.add(new_company)
+
+        founder_cash = db.query(Asset).get((current_user.user_id, "_CASH"))
+        print(founder_cash, form.input_cash.data)
+        founder_cash.asset_amount -= float(form.input_cash.data)
+
+        # Since this is a new company, the founder will definitely not have 
+        # prior assets
+        founder_stocks = Asset(
+            owner_id=current_user.user_id,
+            asset_symbol=form.company_symbol.data,
+            asset_amount=form.size.data)
+        db.add(founder_stocks)
+        db.commit()
+
+        return redirect(url_for("exchange.dashboard"))
+    return render_template("exchange/start_company.html", form=form)
 
 
 @bp.route("/error", methods=("GET",))

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- My CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Place order</title>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; height: 80px; align-items: center;"> <!--This is the top navbar-->
+      <div style="flex-grow: 0.1;"> <!--LOGO-->
+        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+        <input type="text" style="border: 0px;" placeholder="Search security symbol">
+        <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+          <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; padding-top: 2rem;"> <!--This is the container for the form-->
+      <div style="border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 1rem 0rem 0rem;">
+        <form method="POST" action="/exchange/start_company">
+          {{ form.hidden_tag() }}
+          <div class="card z-depth-0" style="width: 600px;">
+            <div class="card-content"> <!--Form input elements-->
+              <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Start company</span></div>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R1: company symbol-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company symbol:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  {{ form.company_symbol(placeholder='COMPANY') }}
+                  <label for="price">company symbol</label>
+                  {% if form.company_symbol.errors %}
+                    <span class="helper-text" style="color: red;">{{ form.company_symbol.errors.0 }}</span>
+                  {% else %}
+                  <span class="helper-text" style="color: #cccccc;">Between 1-10 uppercase alphanumerical characters</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R2: company name-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company name:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  {{ form.company_name(placeholder='My company') }}
+                  <label for="price">company name</label>
+                  {% if form.company_name.errors %}
+                    <span class="helper-text" style="color: red;">{{ form.company_name.errors.0 }}</span>
+                  {% else %}
+                    <span class="helper-text" style="color: #cccccc;">Up to 50 characters</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R3: initial investment-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Initial investment:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  {{ form.input_cash(placeholder='at least $0.01') }}
+                  <label for="price">initial investment</label>
+                  {% if form.input_cash.errors %}
+                    <span class="helper-text" style="color: red;">{{ form.input_cash.errors.0 }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R4: initial number of shares-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Number of shares:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  {{ form.size() }}
+                  <label for="price">initial investment</label>
+                  {% if form.size.errors %}
+                    <span class="helper-text" style="color: red;">{{ form.size.errors.0 }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
+              {{ form.submit(class="waves-effect waves-light btn") }}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
