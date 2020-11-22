@@ -52,7 +52,10 @@ class Asset(Base):
 
 
 class Company(Base):
-    """Abstracting the individual securities/companies
+    """Abstracting the individual securities/companies.
+    Initial value is the amount of cash put into the company by the founder.
+    Market price is the price of a share of this company, which is determined 
+    either at founding, or by the latest transaction on this company's stock
     """
     __tablename__ = "companies"
 
@@ -60,6 +63,7 @@ class Company(Base):
     name = Column(String(50), nullable=False)
     initial_value = Column(Float, nullable=False)
     founder_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"))
+    market_price = Column(Float, nullable=False)
 
     owner = relationship("User", back_populates="companies")
 
