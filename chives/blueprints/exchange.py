@@ -8,14 +8,20 @@ from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm
-from chives.models.models import Order
+from chives.models.models import Order, Asset
 
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
 @bp.route("/dashboard", methods=("GET",))
 @login_required
 def dashboard():
-    return render_template("exchange/dashboard.html")
+    # Any amount of cash will be displayed
+    cash = [a for a in current_user.assets if (a.asset_symbol == "_CASH")][0]
+    # Empty assets for stocks will not be displayed
+    stocks = [a for a in current_user.assets 
+        if (a.asset_symbol != "_CASH") and (a.asset_amount > 0)]
+    return render_template(
+        "exchange/dashboard.html", cash=cash, stocks=stocks)
 
 @bp.route("/submit_order", methods=("GET", "POST"))
 @login_required
