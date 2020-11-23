@@ -279,7 +279,8 @@ class MatchingEngine:
             # entirely fulfilled, and whose remaining part is cancelled, 
             # then return the assets back to the seller
             if match_result.incoming_remain is not None \
-                and (match_result.incoming_remain.cancelled_dttm is not None):
+                and (match_result.incoming_remain.cancelled_dttm is not None) \
+                and (match_result.incoming_remain.side == "ask"):
                 source_asset = self.session.query(Asset).get(
                     (match_result.incoming_remain.owner_id, 
                      match_result.incoming_remain.security_symbol)

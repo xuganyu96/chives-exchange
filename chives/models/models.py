@@ -62,8 +62,10 @@ class Company(Base):
     symbol = Column(String(10), nullable=False, primary_key=True)
     name = Column(String(50), nullable=False)
     initial_value = Column(Float, nullable=False)
+    initial_size = Column(Integer, nullable=False)
     founder_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"))
     market_price = Column(Float, nullable=False)
+    create_dttm = Column(DateTime, default=dt.datetime.utcnow)
 
     owner = relationship("User", back_populates="companies")
 
@@ -84,6 +86,7 @@ class Order(Base):
     parent_order_id = Column(Integer, unique=True)
     owner_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"))
     cancelled_dttm = Column(DateTime)
+    create_dttm = Column(DateTime, default=dt.datetime.utcnow)
 
     owner = relationship("User", back_populates="orders")
 
@@ -101,7 +104,8 @@ class Order(Base):
             active=self.active,
             parent_order_id=self.order_id,
             owner_id=self.owner_id,
-            cancelled_dttm=self.cancelled_dttm
+            cancelled_dttm=self.cancelled_dttm,
+            create_dttm=self.create_dttm
         )
 
     def copy(self):
@@ -122,7 +126,8 @@ class Order(Base):
             active=self.active,
             parent_order_id=self.parent_order_id,
             owner_id=self.owner_id,
-            cancelled_dttm=self.cancelled_dttm
+            cancelled_dttm=self.cancelled_dttm,
+            create_dttm=self.create_dttm
         )
 
     @property

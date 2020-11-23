@@ -8,7 +8,7 @@ from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm, StartCompanyForm
-from chives.models.models import Order, Asset, Company
+from chives.models.models import Order, Asset, Company, Transaction, User
 
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
@@ -77,6 +77,60 @@ def submit_order():
     return render_template("exchange/submit_order.html", form=form)
 
 
+@bp.route("/recent_orders", methods=("GET",))
+@login_required 
+def recent_orders():
+    """Render the most recent (up to) 50 orders
+    """
+    db = get_db()
+    ownership = (Order.owner_id == current_user.user_id)
+    create_dttm_desc = Order.create_dttm.desc()
+    recent_orders = db.query(Order).filter(
+        ownership).order_by(create_dttm_desc).limit(50).all()
+    for order in recent_orders:
+        order.side_display = "Buy" if order.side == "bid" else "Sell"
+        order.price_display = f"{order.price:.2f}" if order.price is not None else "any price available"
+        order.create_dttm_display = order.create_dttm.strftime("%Y-%m-%d %H:%M:%S")
+    
+    return render_template("exchange/recent_orders.html", orders=recent_orders)
+
+
+@bp.route("/recent_transactions", methods=("GET",))
+@login_required
+def recent_transactions():
+    """Render the most recent (up to) 50 transactions
+    """
+    db = get_db()
+    order_ids = [o.order_id for o in current_user.orders]
+    involves_current_user = Transaction.ask_id.in_(order_ids) \
+        | Transaction.bid_id.in_(order_ids)
+    dttm_desc = Transaction.transact_dttm.desc()
+    transactions = db.query(Transaction).filter(
+        involves_current_user).order_by(dttm_desc).limit(50).all()
+
+    for t in transactions:
+        t.side_display = "Bought" if (t.bid_id in order_ids) else "Sold"
+        t.dttm_display = t.transact_dttm.strftime("%Y-%m-%d %H:%M:%S")
+    
+    return render_template("exchange/recent_transactions.html", 
+        transactions=transactions)
+
+
+@bp.route("/view_company/<company_symbol>", methods=("GET",))
+@login_required 
+def view_company(company_symbol):
+    db = get_db()
+    company = db.query(Company).get(company_symbol)
+    if company is None:
+        return redirect(url_for(
+            "exchange.error", 
+            error_msg=f"Company {company_symbol} does not exist"))
+    else:
+        company.create_date_display = company.create_dttm.strftime("%Y-%m-%d")
+        company.founder_name = db.query(User).get(company.founder_id).username
+        return render_template("exchange/view_company.html", company=company)
+
+
 @bp.route("/start_company", methods=("GET", "POST"))
 @login_required 
 def start_company():
@@ -87,6 +141,7 @@ def start_company():
             symbol=form.company_symbol.data,
             name=form.company_name.data,
             initial_value=form.input_cash.data,
+            initial_size=form.size.data,
             founder_id=current_user.user_id,
             market_price=form.input_cash.data / form.size.data
         )
