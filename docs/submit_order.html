@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="/docs/static/style.css">
+
+  </style>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; flex-direction: column; margin-top: 2rem;">
+      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
+        <div><span style="font-size: 2rem;">Submit stock order</span></div>
+        <div style="margin: 1rem 0rem;"> <!-- Introduction -->
+          To place an order to buy/sell stocks, go to <span class="code">/exchange/submit_order</span> route, which 
+          should display a form similar to the one below
+        </div>
+        <div class="card" style="align-self: center; margin: 1rem 0rem;"> <!--Dummy form-->
+          <div class="card-content"> <!--Form input elements-->
+            <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Place order</span></div>
+            <div style="margin-bottom: 1rem; display: flex; align-items: center;"> <!-- First row: I am buying/selling -->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">I am</span></div>
+              <div><select class="browser-default" id="side" name="side" required="" style="font-size: 1.5rem; border: 1px solid #cccccc; border-radius: 10px;"><option value="ask">selling</option><option value="bid">buying</option></select></div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Second row: XXXX shares of XXXX stock -->
+              <div class="input-field">
+                <input id="size" name="size" placeholder="how many" required="" type="text" value="" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;">
+                <label for="size" class="active">Number of shares</label>
+                
+              </div>
+              <div style="margin: 0px 1rem;"><span style="font-size: 1.5rem; padding-bottom: 0.5rem;"> shares of </span></div>
+              <div class="input-field">
+                <input id="security_symbol" name="security_symbol" placeholder="TSLA cause why not" required="" type="text" value="">
+                <label for="security_symbol" class="active">Choice of stock</label>
+                
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Third row: Priced at $XXX.XX or better -->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">priced at</span></div>
+              <div class="input-field" style="flex: 1 1 auto;">
+                <input id="price" name="price" placeholder="any price available" type="text" value="">
+                <label for="price" class="active">Target price</label>
+                
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
+              <div>
+                <label>
+                  <input class="filled-in checkbox-mdc-primary" id="all_or_none" name="all_or_none" type="checkbox" value="y">
+                  <span style="color: black;">All or none: Fulfill all of my order, or none of it</span>
+                </label>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
+              <div>
+                <label>
+                  <input class="filled-in checkbox-mdc-primary" id="immediate_or_cancel" name="immediate_or_cancel" type="checkbox" value="y">
+                  <span style="color: black;">Immediate or cancel: Fulfill my order as much as possible, and cancel the rest</span>
+                </label>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+              <span style="color: #cccccc;">Leave target price empty for market orders. <br>
+                All market orders are automatically immediate-or-canel</span>
+            </div>
+          </div>
+          <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
+            <i class="waves-effect waves-light btn waves-input-wrapper" style=""><input class="waves-button-input white-text" id="submit" name="submit" type="submit" value="Place order"></i>
+          </div>
+        </div>
+        <div style="margin: 1rem 0rem;">
+          <p>
+            There are a number of things to pay attention to: <br><br>
+            <span style="font-weight: bold;">The number of shares</span> (also called the size) of the order must be a 
+            positive integer, and in the case of a selling order, it must be less than or equal to the number of 
+            shares that the current user has. If a user tries to submit a selling order with a bigger size than what he 
+            has, the order will not be submitted, and the user will be redirected to an error page. There is currently 
+            no overdrafting protection against buying orders since the market price is volatile.<br><br>
+            <span style="font-weight: bold;">The target price</span> indicates the worst deal that the order can be 
+            executed upon, or can be left empty to indicate that the user is willing to accept ANY price on the market 
+            (hence a market order). All market orders are automatically set to be "immediate-or-cancel", which is 
+            explained below. <br><br>
+            <span style="font-weight: bold;">"All or none"</span> is a kind of order policy. It declares that the order 
+            must be fulfilled entirely in a single matching heartbeat. More specifically, if an AON order is an incoming 
+            order, then no transaction will be made if the set of candidate orders cannot fulfilled the incoming order 
+            completely; on the other hand, if an AON order is an active candidate, then it cannot be matched with an 
+            incoming order that does not fulfill this candidate completely.<br><br>
+            <span style="font-weight: bold;">"Immediate or cancel"</span> is a kind of order policy. It declares that 
+            any remaining portion of the order that is not fulfilled will be immediately cancelled instead of being 
+            marked active and become future candidates. This is especially important for market orders, since market 
+            orders do not have a target price, which makes it invalid as a candidate. <br><br>
+
+            In the case of a selling order, the size of the order is immediately deducted from the user's assets; in all 
+            other cases, changes to a user's asset will be reflected after the matching engine has committed 
+            transactions into the database.
+          </p>
+        </div>
+
+        <div> <!--Return Home-->
+          <a href="/index.html" class="btn">Return to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

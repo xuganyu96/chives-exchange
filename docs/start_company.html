@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="/docs/static/style.css">
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; flex-direction: column; margin-top: 2rem;">
+      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
+        <div><span style="font-size: 2rem;">Start company</span></div>
+        <div style="margin-top: 1rem;"> <!-- Introduction -->
+          Upon registration, each user is initially given a set amount of (virtual) cash ($10,000.00 for now) that, 
+          aside from being used for trading securities that are already circulating on the exchange, can be used to 
+          found a new company. To begin the process of starting a company, head to 
+          <span class="code">/exchange/start_company</span>, which should display an HTML form similar to this:
+        </div>
+        <div class="card" style="width: 600px; align-self: center; margin-top: 2rem;"> <!--Dummy form-->
+          <div class="card-content"> <!--Form input elements-->
+            <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Start company</span></div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R1: company symbol-->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company symbol:</span></div>
+              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                <input id="company_symbol" name="company_symbol" placeholder="COMPANY" required="" type="text" value="" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;">
+                <label for="price" class="active">company symbol</label>
+                
+                <span class="helper-text" style="color: #cccccc;">Between 1-10 uppercase alphanumerical characters</span>
+                
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R2: company name-->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company name:</span></div>
+              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                <input id="company_name" name="company_name" placeholder="My company" required="" type="text" value="">
+                <label for="price" class="active">company name</label>
+                
+                  <span class="helper-text" style="color: #cccccc;">Up to 50 characters</span>
+                
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R3: initial investment-->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Initial investment:</span></div>
+              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                <input id="input_cash" name="input_cash" placeholder="at least $0.01" required="" type="text" value="">
+                <label for="price" class="active">initial investment</label>
+                
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R4: initial number of shares-->
+              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Number of shares:</span></div>
+              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                <input id="size" name="size" required="" type="text" value="">
+                <label for="price">initial investment</label>
+                
+              </div>
+            </div>
+          </div>
+          <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
+            <i class="waves-effect waves-light btn waves-input-wrapper"><input class="waves-button-input white-text" id="submit" name="submit" type="submit" value="Start company"></i>
+          </div>
+        </div>
+        <div> <!-- What after company is created-->
+          <p>
+            Note that <span style="font-weight: bold;">Company symbol</span> must be unique among symbols of all 
+            securities that can be traded on the exchange, or an error message will be displayed.
+            <br><br>
+            Once the form is sucessfully submitted and validated, the initial invesment will be deducted from the user's 
+            cash, and in return, the corresponding number of shares that was entered in the form will also be given to 
+            the user, thus making the user the sole shareholder of such company. In addition, immediate after a 
+            company's founding, its market share price is computed to by 
+            <span style="font-weight: bold;"> (initial investment / number of shares) </span>. The company founder is 
+            now free to sell these stocks, and his company's market value/market price will be determined by 
+            subsequent transaction.
+          </p>
+        </div>
+        <div>
+          <a href="/index.html" class="btn">Return to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

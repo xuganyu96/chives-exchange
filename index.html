@@ -10,18 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-
-  <style>
-    .code {
-      font-family: 'Courier New', Courier, monospace;
-      color: darkblue;
-    }
-    .code-comment {
-      font-family: 'Courier New', Courier, monospace;
-      color: grey;
-    }
-
-  </style>
+  <link rel="stylesheet" href="/docs/static/style.css">
 </head>
 <body>
   <div style="display: flex; flex-direction: column; padding: 0px 25px">
@@ -30,35 +19,44 @@
         <span style="font-size: 4rem;">Chives Exchange</span>
         <span style="font-size: 2rem;">Simple stock exchange with a Flask-powered web client</span>
       </div>
-      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
-        <div><span style="font-size: 2rem;">Getting started</span></div>
-        <div>
-          <p style="font-size: 1rem;">
-            Begin by setting up a Python 3 environment, then clone the repository, and do 
-            <span class="code">pip install -r requirements.txt</span> to install the Python dependency. <br>
-            In addition to Python 3, the exchange also depends on RabbitMQ as the message broker that forwards 
-            stock order submission from the webserver to the matching engine. The easist way to get RabbitMQ running 
-            on a local environment is through Docker: <br>
-            <span class="code">
-              docker run -d --rm --name "rabbitmq" -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-            </span>
-            <br><br>
-            After RabbitMQ starts running, initialize the database instance by calling 
-            <span class="code">python -m chives initdb</span>. By default, this invokes SQLAlchemy's ORM module to 
-            create a SQLite database located at /tmp/chives.sqlite, and create the SQL schema within this SQLite 
-            database. The final two components can be each set to run through chives' CLI: <br><br>
-            <span class="code">
-              python -m chives start_engine <span class="code-comment"># to start a matching engine instance</span><br>
-              python -m chives webserver <span class="code-comment"># to start running the Flask application</span>
-            </span>
-            <br><br>
-            By default, the Flask application runs on port 5000, and you can begin by visiting the user registration 
-            page at <span class="code">localhost:5000/auth/register</span>
-            <br><br>
-            To teardown the demo, first exit out of matching engine and webserver. Run 
-            <span class="code">docker stop rabbitmq </span> to stop the RabbitMQ server, and remove the SQLite database 
-            by deleting the database file: <span class="code">rm /tmp/chives.sqlite</span>
-          </p>
+      <div style="display: flex;">
+        <div style="flex: 1 1 600px; border: 1px solid #cccccc; border-radius: 25px; padding: 2rem; margin-right: 2rem;">
+          <div><span style="font-size: 2rem;">Content</span></div>
+          <div class="collection">
+            <a class="collection-item" href="docs/start_company.html">Start company</a>
+            <a class="collection-item" href="docs/submit_order.html">Submit stock order</a>
+          </div>
+        </div>
+        <div style="flex: 1 1 auto; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 2rem;"> <!-- Getting started -->
+          <div><span style="font-size: 2rem;">Getting started</span></div>
+          <div>
+            <p style="font-size: 1rem;">
+              Begin by setting up a Python 3 environment, then clone the repository, and do 
+              <span class="code">pip install -r requirements.txt</span> to install the Python dependency. <br>
+              In addition to Python 3, the exchange also depends on RabbitMQ as the message broker that forwards 
+              stock order submission from the webserver to the matching engine. The easist way to get RabbitMQ running 
+              on a local environment is through Docker: <br>
+              <span class="code">
+                docker run -d --rm --name "rabbitmq" -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+              </span>
+              <br><br>
+              After RabbitMQ starts running, initialize the database instance by calling 
+              <span class="code">python -m chives initdb</span>. By default, this invokes SQLAlchemy's ORM module to 
+              create a SQLite database located at /tmp/chives.sqlite, and create the SQL schema within this SQLite 
+              database. The final two components can be each set to run through chives' CLI: <br><br>
+              <span class="code">
+                python -m chives start_engine <span class="code-comment"># to start a matching engine instance</span><br>
+                python -m chives webserver <span class="code-comment"># to start running the Flask application</span>
+              </span>
+              <br><br>
+              By default, the Flask application runs on port 5000, and you can begin by visiting the user registration 
+              page at <span class="code">localhost:5000/auth/register</span>
+              <br><br>
+              To teardown the demo, first exit out of matching engine and webserver. Run 
+              <span class="code">docker stop rabbitmq </span> to stop the RabbitMQ server, and remove the SQLite database 
+              by deleting the database file: <span class="code">rm /tmp/chives.sqlite</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
