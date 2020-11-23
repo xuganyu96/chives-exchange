@@ -8,7 +8,7 @@ from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm, StartCompanyForm
-from chives.models.models import Order, Asset, Company
+from chives.models.models import Order, Asset, Company, Transaction
 
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
@@ -89,10 +89,31 @@ def recent_orders():
         ownership).order_by(create_dttm_desc).limit(50).all()
     for order in recent_orders:
         order.side_display = "Buy" if order.side == "bid" else "Sell"
-        order.price_display = order.price if order.price is not None else "any price available"
+        order.price_display = f"{order.price:.2f}" if order.price is not None else "any price available"
         order.create_dttm_display = order.create_dttm.strftime("%Y-%m-%d %H:%M:%S")
     
     return render_template("exchange/recent_orders.html", orders=recent_orders)
+
+
+@bp.route("/recent_transactions", methods=("GET",))
+@login_required
+def recent_transactions():
+    """Render the most recent (up to) 50 transactions
+    """
+    db = get_db()
+    order_ids = [o.order_id for o in current_user.orders]
+    involves_current_user = Transaction.ask_id.in_(order_ids) \
+        | Transaction.bid_id.in_(order_ids)
+    dttm_desc = Transaction.transact_dttm.desc()
+    transactions = db.query(Transaction).filter(
+        involves_current_user).order_by(dttm_desc).limit(50).all()
+
+    for t in transactions:
+        t.side_display = "Bought" if (t.bid_id in order_ids) else "Sold"
+        t.dttm_display = t.transact_dttm.strftime("%Y-%m-%d %H:%M:%S")
+    
+    return render_template("exchange/recent_transactions.html", 
+        transactions=transactions)
 
 
 @bp.route("/start_company", methods=("GET", "POST"))
