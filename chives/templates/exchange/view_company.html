@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- My CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>{{ company.name }}</title>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; height: 80px; align-items: center;"> <!--This is the top navbar-->
+      <div style="flex-grow: 0.1;"> <!--LOGO-->
+        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+        <input type="text" style="border: 0px;" placeholder="Search security symbol">
+        <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+          <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center;"> <!--Main content wrapper-->
+      <div style="flex: 1 1 650px; width: 550px; border: 1px solid #cccccc; border-radius: 15px; display: flex; flex-direction: column; padding: 2rem;"> <!-- Main content-->
+        <div><!--Row one: Market summary > company name-->
+          <span style="font-size: 2rem; color: #cccccc;">Market Summary > </span>
+          <span style="font-size: 2rem;">{{ company.name }}</span>
+        </div>
+        <div><!--Row 2: Company symbol-->
+          <span style="font-size: 1.5rem;">{{ company.symbol }}</span>
+        </div>
+        <div><!--Row 3: price-->
+          <span style="font-size: 1.5rem;">Market price: {{ "$%.2f"|format(company.market_price) }}</span>
+        </div>
+        <div style="flex-basis: 280px; border: 1px solid #cccccc; margin: 2rem 0rem;"><!--Row 4: GRAPH-->
+          <span style="font-size: 5rem; color: #cccccc;">Placeholder for the GRAPH</span>
+        </div>
+        <div> <!--Row 5: Description-->
+          <span style="font-size: 2rem;">Company description</span>
+          <p>
+            {{ company.name }} was founded on {{ company.create_date_display }} by {{ company.founder_name}} with an 
+            an initial value of {{ "$%.2f"|format(company.initial_value) }} spread across {{ company.initial_size }} 
+            shares
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -8,7 +8,7 @@ from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm, StartCompanyForm
-from chives.models.models import Order, Asset, Company, Transaction
+from chives.models.models import Order, Asset, Company, Transaction, User
 
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
@@ -116,6 +116,21 @@ def recent_transactions():
         transactions=transactions)
 
 
+@bp.route("/view_company/<company_symbol>", methods=("GET",))
+@login_required 
+def view_company(company_symbol):
+    db = get_db()
+    company = db.query(Company).get(company_symbol)
+    if company is None:
+        return redirect(url_for(
+            "exchange.error", 
+            error_msg=f"Company {company_symbol} does not exist"))
+    else:
+        company.create_date_display = company.create_dttm.strftime("%Y-%m-%d")
+        company.founder_name = db.query(User).get(company.founder_id).username
+        return render_template("exchange/view_company.html", company=company)
+
+
 @bp.route("/start_company", methods=("GET", "POST"))
 @login_required 
 def start_company():
@@ -126,6 +141,7 @@ def start_company():
             symbol=form.company_symbol.data,
             name=form.company_name.data,
             initial_value=form.input_cash.data,
+            initial_size=form.size.data,
             founder_id=current_user.user_id,
             market_price=form.input_cash.data / form.size.data
         )

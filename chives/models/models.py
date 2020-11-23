@@ -62,8 +62,10 @@ class Company(Base):
     symbol = Column(String(10), nullable=False, primary_key=True)
     name = Column(String(50), nullable=False)
     initial_value = Column(Float, nullable=False)
+    initial_size = Column(Integer, nullable=False)
     founder_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"))
     market_price = Column(Float, nullable=False)
+    create_dttm = Column(DateTime, default=dt.datetime.utcnow)
 
     owner = relationship("User", back_populates="companies")
 
