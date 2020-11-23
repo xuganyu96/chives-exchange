@@ -77,8 +77,8 @@
             <br><br>
             After RabbitMQ starts running, initialize the database instance by calling 
             <span class="code">python -m chives initdb</span>. By default, this invokes SQLAlchemy's ORM module to 
-            create a SQLite database located at /tmp/chives.sqlite, and create the SQL schema within this SQLite 
-            database. The final two components can be each set to run through chives' CLI: <br><br>
+            create a SQLite database located at <span class="code">/tmp/chives.sqlite</span>, and create the SQL schema 
+            within this SQLite database. The final two components can be each set to run through chives' CLI: <br><br>
             <span class="code">
               python -m chives start_engine <span class="code-comment"># to start a matching engine instance</span><br>
               python -m chives webserver <span class="code-comment"># to start running the Flask application</span>
@@ -94,159 +94,359 @@
         </div>
       </div>
       <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
-        <div><span style="font-size: 2rem;">Start company</span></div>
-        <div style="margin-top: 1rem;"> <!-- Introduction -->
-          Upon registration, each user is initially given a set amount of (virtual) cash ($10,000.00 for now) that, 
-          aside from being used for trading securities that are already circulating on the exchange, can be used to 
-          found a new company. To begin the process of starting a company, head to 
-          <span class="code">/exchange/start_company</span>, which should display an HTML form similar to this:
+        <div><span style="font-size: 2rem;">Demo: Steve Jobs becomes RICH!</span></div>
+        <div><p> <!--Introduction-->
+            Suppose you are Steve Jobs, and you just conceived the brilliant idea of doing an IPO of your company: 
+            Apple Inc (AAPL) on a stock exchange. The first step would be to register an account on the 
+            <span class="code">/auth/register</span> route. After the registration, you will be redirected to the 
+            login page at <span class="code">/auth/login</span>. Logging in redirects the user to the dashboard 
+            page at <span class="code">/exchange/dashboard</span>:</p>
         </div>
-        <div class="card" style="width: 600px; align-self: center; margin-top: 2rem;"> <!--Dummy form-->
-          <div class="card-content"> <!--Form input elements-->
-            <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Start company</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R1: company symbol-->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company symbol:</span></div>
-              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-                <input id="company_symbol" name="company_symbol" placeholder="COMPANY" required="" type="text" value="" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;">
-                <label for="price" class="active">company symbol</label>
-                
-                <span class="helper-text" style="color: #cccccc;">Between 1-10 uppercase alphanumerical characters</span>
-                
+        <div style="align-self: center; width: 600px;"> <!--Dashboard Mockup -->
+          <div style="display: flex; flex-direction: column; padding: 0px 25px">
+            <div style="display: flex; height: 80px; align-items: center;"> <!--This is the top navbar-->
+              <div style="flex-grow: 0.1;"> <!--LOGO-->
+                <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+              </div>
+              <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+                <input type="text" style="border: 0px;" placeholder="Search security symbol">
+                <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+                  <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+                </button>
+              </div>
+              <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
+                <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+                <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
               </div>
             </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R2: company name-->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company name:</span></div>
-              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-                <input id="company_name" name="company_name" placeholder="My company" required="" type="text" value="">
-                <label for="price" class="active">company name</label>
-                
-                  <span class="helper-text" style="color: #cccccc;">Up to 50 characters</span>
-                
+            <div style="display: flex; flex-direction: column">
+              <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
+                <span style="font-size: 2rem;">Net Worth</span>
+                <span style="font-size: 4rem;">$10000.00</span>
               </div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R3: initial investment-->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Initial investment:</span></div>
-              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-                <input id="input_cash" name="input_cash" placeholder="at least $0.01" required="" type="text" value="">
-                <label for="price" class="active">initial investment</label>
-                
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R4: initial number of shares-->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Number of shares:</span></div>
-              <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-                <input id="size" name="size" required="" type="text" value="">
-                <label for="price">initial investment</label>
-                
+              <div style="flex: 1 1 330px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
+                <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
+                <div style="flex: 1 1 auto; overflow-x: scroll; overflow-y: hidden; white-space: nowrap; display: flex;">
+                  <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+                    <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <span class="card-title">Cash</span>
+                      <span>$10000.00</span>
+                    </div>
+                  </div>
+                  
+                </div>
               </div>
             </div>
           </div>
-          <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
-            <i class="waves-effect waves-light btn waves-input-wrapper"><input class="waves-button-input white-text" id="submit" name="submit" type="submit" value="Start company"></i>
-          </div>
         </div>
-        <div> <!-- What after company is created-->
-          <p>
-            Note that <span style="font-weight: bold;">Company symbol</span> must be unique among symbols of all 
-            securities that can be traded on the exchange, or an error message will be displayed.
-            <br><br>
-            Once the form is sucessfully submitted and validated, the initial invesment will be deducted from the user's 
-            cash, and in return, the corresponding number of shares that was entered in the form will also be given to 
-            the user, thus making the user the sole shareholder of such company. In addition, immediate after a 
-            company's founding, its market share price is computed to by 
-            <span style="font-weight: bold;"> (initial investment / number of shares) </span>. The company founder is 
-            now free to sell these stocks, and his company's market value/market price will be determined by 
-            subsequent transaction.
+        <div> <!-- Startup instruction -->
+          <p>Upon registration, each user is given an initial amount of $10,000 (virtual) cash, which can be used to 
+            buy stocks, or, in the case of a visionary tech entrepreneur like Steve Jobs, be used to start a company 
+            at <span class="code">/exchange/start_company</span>. You can specify the amount of cash that becomes the 
+            initial market value of a company and the number of shares you want to get in return, and the initial 
+            market price of a share will be automatically computed.
           </p>
         </div>
-      </div>
-      <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem; padding: 2rem;"> <!-- Getting started -->
-        <div><span style="font-size: 2rem;">Submit stock order</span></div>
-        <div style="margin: 1rem 0rem;"> <!-- Introduction -->
-          To place an order to buy/sell stocks, go to <span class="code">/exchange/submit_order</span> route, which 
-          should display a form similar to the one below
-        </div>
-        <div class="card" style="align-self: center; margin: 1rem 0rem;"> <!--Dummy form-->
-          <div class="card-content"> <!--Form input elements-->
-            <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Place order</span></div>
-            <div style="margin-bottom: 1rem; display: flex; align-items: center;"> <!-- First row: I am buying/selling -->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">I am</span></div>
-              <div><select class="browser-default" id="side" name="side" required="" style="font-size: 1.5rem; border: 1px solid #cccccc; border-radius: 10px;"><option value="ask">selling</option><option value="bid">buying</option></select></div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Second row: XXXX shares of XXXX stock -->
-              <div class="input-field">
-                <input id="size" name="size" placeholder="how many" required="" type="text" value="" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;">
-                <label for="size" class="active">Number of shares</label>
-                
+        <div style="align-self: center;"> <!-- Start company Mockup-->
+          <div class="card" style="width: 600px;">
+            <div class="card-content"> <!--Form input elements-->
+              <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Start company</span></div>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R1: company symbol-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company symbol:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  <input id="company_symbol" name="company_symbol" placeholder="COMPANY" required="" type="text" value="AAPL" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%; cursor: auto;">
+                  <label for="price" class="active">company symbol</label>
+                  
+                  <span class="helper-text" style="color: #cccccc;">Between 1-10 uppercase alphanumerical characters</span>
+                  
+                </div>
               </div>
-              <div style="margin: 0px 1rem;"><span style="font-size: 1.5rem; padding-bottom: 0.5rem;"> shares of </span></div>
-              <div class="input-field">
-                <input id="security_symbol" name="security_symbol" placeholder="TSLA cause why not" required="" type="text" value="">
-                <label for="security_symbol" class="active">Choice of stock</label>
-                
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R2: company name-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Company name:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  <input id="company_name" name="company_name" placeholder="My company" required="" type="text" value="Apple Inc">
+                  <label for="price" class="active">company name</label>
+                  
+                    <span class="helper-text" style="color: #cccccc;">Up to 50 characters</span>
+                  
+                </div>
               </div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Third row: Priced at $XXX.XX or better -->
-              <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">priced at</span></div>
-              <div class="input-field" style="flex: 1 1 auto;">
-                <input id="price" name="price" placeholder="any price available" type="text" value="">
-                <label for="price" class="active">Target price</label>
-                
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R3: initial investment-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Initial investment:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  <input id="input_cash" name="input_cash" placeholder="at least $0.01" required="" type="text" value="10000.00">
+                  <label for="price" class="active">initial investment</label>
+                  
+                </div>
               </div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
-              <div>
-                <label>
-                  <input class="filled-in checkbox-mdc-primary" id="all_or_none" name="all_or_none" type="checkbox" value="y">
-                  <span style="color: black;">All or none: Fulfill all of my order, or none of it</span>
-                </label>
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R4: initial number of shares-->
+                <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Number of shares:</span></div>
+                <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
+                  <input id="size" name="size" required="" type="text" value="100">
+                  <label for="price" class="active">initial shares</label>
+                  
+                </div>
               </div>
             </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
-              <div>
-                <label>
-                  <input class="filled-in checkbox-mdc-primary" id="immediate_or_cancel" name="immediate_or_cancel" type="checkbox" value="y">
-                  <span style="color: black;">Immediate or cancel: Fulfill my order as much as possible, and cancel the rest</span>
-                </label>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-              <span style="color: #cccccc;">Leave target price empty for market orders. <br>
-                All market orders are automatically immediate-or-canel</span>
+            <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
+              <i class="waves-effect waves-light btn waves-input-wrapper" style=""><input class="waves-button-input" id="submit" name="submit" type="submit" value="Start company"></i>
             </div>
           </div>
-          <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
-            <i class="waves-effect waves-light btn waves-input-wrapper" style=""><input class="waves-button-input white-text" id="submit" name="submit" type="submit" value="Place order"></i>
+        </div>
+        <div> <!--After company is started: -->
+          <p>Upon hitting "start company", the user is redirected back to the dashboard page, and the newly acquired 
+            stocks, alongside the cash that went into those stocks, should be reflected there:
+          </p>
+        </div>
+        <div style="align-self: center; width: 600px;"> <!-- Dashboard 2 Mockup-->
+          <div style="display: flex; flex-direction: column">
+            <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
+              <span style="font-size: 2rem;">Net Worth</span>
+              <span style="font-size: 4rem;">$10000.00</span>
+            </div>
+            <div style="flex: 1 1 330px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
+              <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
+              <div style="flex: 1 1 auto; overflow-x: scroll; overflow-y: hidden; white-space: nowrap; display: flex;">
+                <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+                  <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="card-title">Cash</span>
+                    <span>$5000.00</span>
+                  </div>
+                </div>
+                
+                <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+                  <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="card-title">AAPL</span>
+                    <span>250 shares</span>
+                  </div>
+                  <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+                    <span class="grey-text" style="font-size: 16px;">Market Value</span>
+                    <span class="grey-text" style="font-size: 16px;">$5000.00</span>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
           </div>
         </div>
-        <div style="margin: 1rem 0rem;">
-          <p>
-            There are a number of things to pay attention to: <br><br>
-            <span style="font-weight: bold;">The number of shares</span> (also called the size) of the order must be a 
-            positive integer, and in the case of a selling order, it must be less than or equal to the number of 
-            shares that the current user has. If a user tries to submit a selling order with a bigger size than what he 
-            has, the order will not be submitted, and the user will be redirected to an error page. There is currently 
-            no overdrafting protection against buying orders since the market price is volatile.<br><br>
-            <span style="font-weight: bold;">The target price</span> indicates the worst deal that the order can be 
-            executed upon, or can be left empty to indicate that the user is willing to accept ANY price on the market 
-            (hence a market order). All market orders are automatically set to be "immediate-or-cancel", which is 
-            explained below. <br><br>
-            <span style="font-weight: bold;">"All or none"</span> is a kind of order policy. It declares that the order 
-            must be fulfilled entirely in a single matching heartbeat. More specifically, if an AON order is an incoming 
-            order, then no transaction will be made if the set of candidate orders cannot fulfilled the incoming order 
-            completely; on the other hand, if an AON order is an active candidate, then it cannot be matched with an 
-            incoming order that does not fulfill this candidate completely.<br><br>
-            <span style="font-weight: bold;">"Immediate or cancel"</span> is a kind of order policy. It declares that 
-            any remaining portion of the order that is not fulfilled will be immediately cancelled instead of being 
-            marked active and become future candidates. This is especially important for market orders, since market 
-            orders do not have a target price, which makes it invalid as a candidate. <br><br>
+        <div> <!-- View the company -->
+          <p>The newly created company can be viewed at <span class="code">/exchange/view_company/AAPL</span></p>
+        </div>
+        <div style="align-self: center;"> <!--Market summary mockup-->
+          <div style="flex: 1 1 650px; width: 550px; border: 1px solid #cccccc; border-radius: 15px; display: flex; flex-direction: column; padding: 2rem;"> <!-- Main content-->
+            <div><!--Row one: Market summary > company name-->
+              <span style="font-size: 2rem; color: #cccccc;">Market Summary &gt; </span>
+              <span style="font-size: 2rem;">Apple</span>
+            </div>
+            <div><!--Row 2: Company symbol-->
+              <span style="font-size: 1.5rem;">AAPL</span>
+            </div>
+            <div><!--Row 3: price-->
+              <span style="font-size: 1.5rem;">Market price: $20.00</span>
+            </div>
+            <div style="flex-basis: 280px; border: 1px solid #cccccc; margin: 2rem 0rem;"><!--Row 4: GRAPH-->
+              <span style="font-size: 5rem; color: #cccccc;">Placeholder for the GRAPH</span>
+            </div>
+            <div> <!--Row 5: Description-->
+              <span style="font-size: 2rem;">Company description</span>
+              <p>
+                Apple was founded on 2020-11-23 by steve_jobs with an 
+                an initial value of $5000.00 spread across 250 
+                shares
+              </p>
+            </div>
+          </div>
+        </div>
 
-            In the case of a selling order, the size of the order is immediately deducted from the user's assets; in all 
-            other cases, changes to a user's asset will be reflected after the matching engine has committed 
-            transactions into the database.
+        <div> <!-- Enter the wall street-->
+          <span style="font-size: 2rem; font-weight: bold;">ENTER THE WALL STREET BANKER</span>
+          <p>At the other end of the United States in Wall Street, a banker just noticed your company, and after
+            meticulous research, decided that your company is worth more than $20 per share, so he decided to place a 
+            buying order for 100 shares of your company at $25 per share:
           </p>
         </div>
-      </div>
+        <div style="align-self: center;"> <!--Submit order mockup-->
+          <div style="border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 1rem 0rem 0rem;">
+            <form method="POST" action="/exchange/submit_order">
+              <input id="csrf_token" name="csrf_token" type="hidden" value="IjgyMmUxZjg5ODExNDI4NjAzMjQwYjJlMTFiYzk5OWQyZGY5NTA1MTMi.X7tc_A.t7ThBuri_8oiLUiJCCCLYFnFlDY">
+              <div class="card z-depth-0">
+                <div class="card-content"> <!--Form input elements-->
+                  <div class="card-title" style="margin-bottom: 1.5rem;"><span style="font-size: 2.5rem;">Place order</span></div>
+                  <div style="margin-bottom: 1rem; display: flex; align-items: center;"> <!-- First row: I am buying/selling -->
+                    <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">I am</span></div>
+                    <div><select class="browser-default" id="side" name="side" value="" required="" style="font-size: 1.5rem; border: 1px solid #cccccc; border-radius: 10px;"><option value="bid">buying</option></select></div>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Second row: XXXX shares of XXXX stock -->
+                    <div class="input-field">
+                      <input id="size" name="size" placeholder="how many" required="" type="text" value="100" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAfBJREFUWAntVk1OwkAUZkoDKza4Utm61iP0AqyIDXahN2BjwiHYGU+gizap4QDuegWN7lyCbMSlCQjU7yO0TOlAi6GwgJc0fT/fzPfmzet0crmD7HsFBAvQbrcrw+Gw5fu+AfOYvgylJ4TwCoVCs1ardYTruqfj8fgV5OUMSVVT93VdP9dAzpVvm5wJHZFbg2LQ2pEYOlZ/oiDvwNcsFoseY4PBwMCrhaeCJyKWZU37KOJcYdi27QdhcuuBIb073BvTNL8ln4NeeR6NRi/wxZKQcGurQs5oNhqLshzVTMBewW/LMU3TTNlO0ieTiStjYhUIyi6DAp0xbEdgTt+LE0aCKQw24U4llsCs4ZRJrYopB6RwqnpA1YQ5NGFZ1YQ41Z5S8IQQdP5laEBRJcD4Vj5DEsW2gE6s6g3d/YP/g+BDnT7GNi2qCjTwGd6riBzHaaCEd3Js01vwCPIbmWBRx1nwAN/1ov+/drgFWIlfKpVukyYihtgkXNp4mABK+1GtVr+SBhJDbBIubVw+Cd/TDgKO2DPiN3YUo6y/nDCNEIsqTKH1en2tcwA9FKEItyDi3aIh8Gl1sRrVnSDzNFDJT1bAy5xpOYGn5fP5JuL95ZjMIn1ya7j5dPGfv0A5eAnpZUY3n5jXcoec5J67D9q+VuAPM47D3XaSeL4AAAAASUVORK5CYII=&quot;); background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;">
+                      <label for="size" class="active">Number of shares</label>
+                      
+                    </div>
+                    <div style="margin: 0px 1rem;"><span style="font-size: 1.5rem; padding-bottom: 0.5rem;"> shares of </span></div>
+                    <div class="input-field">
+                      <input id="security_symbol" name="security_symbol" placeholder="TSLA cause why not" required="" type="text" value="AAPL">
+                      <label for="security_symbol" class="active">Choice of stock</label>
+                      
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Third row: Priced at $XXX.XX or better -->
+                    <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">priced at</span></div>
+                    <div class="input-field" style="flex: 1 1 auto;">
+                      <input id="price" name="price" placeholder="any price available" type="text" value="25.00">
+                      <label for="price" class="active">Target price</label>
+                      
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
+                    <div>
+                      <label>
+                        <input class="filled-in checkbox-mdc-primary" id="all_or_none" name="all_or_none" type="checkbox" value="y">
+                        <span style="color: black;">All or none: Fulfill all of my order, or none of it</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!-- Fourth row: All or nothing-->
+                    <div>
+                      <label>
+                        <input class="filled-in checkbox-mdc-primary" id="immediate_or_cancel" name="immediate_or_cancel" type="checkbox" value="y">
+                        <span style="color: black;">Immediate or cancel: Fulfill my order as much as possible, and cancel the rest</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <span style="color: #cccccc;">Leave target price empty for market orders. <br>
+                      All market orders are automatically immediate-or-canel</span>
+                  </div>
+                </div>
+                <div class="card-action" style="display: flex; justify-content: flex-end;"> <!--Form submit button-->
+                  <i class="waves-effect waves-light btn waves-input-wrapper" style=""><input class="waves-button-input" id="submit" name="submit" type="submit" value="Place order"></i>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div>
+          <p> Confirm that your order is placed at <span class="code">/exchange/recent_orders</span></p>
+        </div>
+        <div style="align-self: center;"> <!-- recent order mockup -->
+          <div style="flex: 1 1 auto; border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 2rem; width: 650px;"> <!-- Actual content -->
+        
+            <div><span style="font-size: 2rem;">Recent orders</span></div> <!-- Title: recent orders -->
+            <div style="height: 400px; overflow-y: scroll;"> <!-- Collection of recent orders-->
+              <ul class="collection">
+                
+                <li class="collection-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 1rem;">
+                  <div style="display: flex; align-items: center; width: 100%; margin-bottom: 1rem;"> <!--Row one: Buy XXX shares of YYY-->
+                    <div style="flex: 1 1 auto; display: flex; flex-direction: column;">
+                      <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">Buy 100 shares of AAPL</span>
+                      <span style="font-size: 1.5rem;">at $25.00</span>
+                    </div>
+                    <div style="flex: 0 1 auto; justify-self: flex-end; display: flex; flex-direction: column;">
+                      <span style="font-size: 1rem; color: grey">Submitted at</span>
+                      <span style="font-size: 1rem; color: grey">2020-11-23 06:55:50 UTC</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center;"> <!-- Row two: tags! AON, IOC, Active, Cancelled-->
+                    
+                    
+                    
+                      <div class="chip">Active</div>
+                    
+                    
+                  </div>
+                </li>
+                
+              </ul>
+            </div>
+          
+        </div>
+        </div>
+
+        <div> <!-- Back to jobs-->
+          <span style="font-size: 2rem; font-weight: bold;">Back to Jobs</span>
+          <p>As Jobs, you feel like your company is doing really well and you would like to cash out, so you go through 
+            the same order submission form to sell all 250 shares of your stocks at market price, and after a short 
+            moment, you can refresh the dashboard page, which should now show something like this:
+          </p>
+        </div>
+        <div style="align-self: center; width: 600px;"> <!-- Dashboard 3 mockup-->
+          <div style="display: flex; flex-direction: column">
+            <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
+              <span style="font-size: 2rem;">Net Worth</span>
+              <span style="font-size: 4rem;">$11250.00</span>
+            </div>
+            <div style="flex: 1 1 330px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
+              <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
+              <div style="flex: 1 1 auto; overflow-x: scroll; overflow-y: hidden; white-space: nowrap; display: flex;">
+                <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+                  <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="card-title">Cash</span>
+                    <span>$7500.00</span>
+                  </div>
+                </div>
+                
+                <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
+                  <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="card-title">AAPL</span>
+                    <span>150 shares</span>
+                  </div>
+                  <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+                    <span class="grey-text" style="font-size: 16px;">Market Value</span>
+                    <span class="grey-text" style="font-size: 16px;">$3750.00</span>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+        <div> <!-- Became rich! -->
+          <p>First, because you submitted a market order by omitting the target price, any part of the order that is 
+            not fulfilled will be immediately cancelled and refunded back to you. Since the wall street banker only 
+            bidded for 100 shares, that number of shares of your selling order is fulfilled, and the remaining 150 
+            shares returned back to you.
+          </p>
+          <p>
+            Since the wall street banker specified to buy at $25 per share, your order was fulfilled at $25, so the 
+            sale of 100 shares at $25 means that you gained $2500, which is reflected on your dashboard as your cash 
+            increased from $5000 to $7500.
+          </p>
+          <p>
+            In addition, since the latest trade, the market price of Apple increased to the most recent trade's price,
+            which is $25. This is also reflected on your dashboard as the market value of all of the stocks that you 
+            own increased.
+          </p>
+          <p>
+            Last but not least, you can check your recent transactions:
+          </p>
+        </div>
+        <div style="align-self: center;">
+          <div style="display: flex; flex-direction: column; align-items: center; margin-top: 2rem;"> <!--This is the container for the view-->
+            <div style="flex: 1 1 auto; border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 2rem; width: 650px;"> <!-- Actual content -->
+              
+                <div><span style="font-size: 2rem;">Recent transactions</span></div> <!-- Title: recent orders -->
+                <div style="height: 400px; overflow-y: scroll;"> <!-- Collection of recent orders-->
+                  <ul class="collection">
+                    
+                    <li class="collection-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 1rem;">
+                      <div style="display: flex; align-items: center; width: 100%; margin-bottom: 1rem;"> <!--Row one: Buy XXX shares of YYY-->
+                        <div style="flex: 1 1 auto; display: flex; flex-direction: column;">
+                          <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">Sold 100 shares of AAPL</span>
+                          <span style="font-size: 1.5rem;">at $25.00</span>
+                        </div>
+                        <div style="flex: 0 1 auto; justify-self: flex-end; display: flex; flex-direction: column;">
+                          <span style="font-size: 1rem; color: grey">Transaction time</span>
+                          <span style="font-size: 1rem; color: grey">2020-11-23 07:01:52 UTC</span>
+                        </div>
+                      </div>
+                    </li>
+                    
+                  </ul>
+                </div>
+              
+            </div>
+          </div>
+        </div>
     </div>
   </div>
 </body>
