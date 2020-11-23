@@ -77,6 +77,24 @@ def submit_order():
     return render_template("exchange/submit_order.html", form=form)
 
 
+@bp.route("/recent_orders", methods=("GET",))
+@login_required 
+def recent_orders():
+    """Render the most recent (up to) 50 orders
+    """
+    db = get_db()
+    ownership = (Order.owner_id == current_user.user_id)
+    create_dttm_desc = Order.create_dttm.desc()
+    recent_orders = db.query(Order).filter(
+        ownership).order_by(create_dttm_desc).limit(50).all()
+    for order in recent_orders:
+        order.side_display = "Buy" if order.side == "bid" else "Sell"
+        order.price_display = order.price if order.price is not None else "any price available"
+        order.create_dttm_display = order.create_dttm.strftime("%Y-%m-%d %H:%M:%S")
+    
+    return render_template("exchange/recent_orders.html", orders=recent_orders)
+
+
 @bp.route("/start_company", methods=("GET", "POST"))
 @login_required 
 def start_company():
