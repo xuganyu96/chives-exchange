@@ -1,0 +1,3 @@
+graft chives/static
+graft chives/templates
+global-exclude *.pyc
