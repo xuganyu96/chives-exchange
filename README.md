@@ -1,9 +1,10 @@
 # chives-exchange
-Simulated stock exchange
+Implementation of a stock exchange with matching engine and a web UI powered by 
+Flask.
 
-## Run RabbitMQ with a single MatchingEngine
-First, run the RabbitMQ container:
-
+## Getting started
+The webserver communicates to the matching engine through RabbitMQ, which can be 
+most easily run using docker:
 ```bash
 docker run -d --rm \
     --name "rabbitmq" \
@@ -12,20 +13,20 @@ docker run -d --rm \
     rabbitmq:3-management
 ```
 
-Second, initialize database structure and run matching engine：
-
+Both the webserver and the matching engine reads from and writes to a SQL 
+database, which by default is a SQLite located in `/tmp/chives.sqlite`. To 
+initialize the database schema:
 ```bash
 python -m chives initdb
+```
+
+Run the webserver and matching engine in two separate processes. Make sure that 
+the matching engine is not erroring out because of failure to connect to 
+RabbitMQ.
+```bash
 python -m chives start_engine
-```
-
-Finally, run the test script to see if the system works:
-
-```bash
-python scratch.py
-```
-
-## Run the flask application:
-```bash
 python -m chives webserver
 ```
+
+You can now follow the demo [here](https://xuganyu96.github.io/chives-exchange/) 
+to try it out.

@@ -5,7 +5,8 @@ from chives.matchingengine.matchingengine import main as me_main
 from chives.models import Base
 from chives.webserver import create_app
 
-if __name__ == "__main__":
+
+def main():
     args = chives_parser.parse_args()
 
     if args.subcommand == "start_engine":
@@ -17,4 +18,7 @@ if __name__ == "__main__":
     if args.subcommand == "webserver":
         app = create_app()
         app.run(port=args.webserver_port, debug=args.debug)
-    
+
+
+if __name__ == "__main__":
+    main()
