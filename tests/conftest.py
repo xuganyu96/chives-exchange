@@ -1,6 +1,7 @@
 """Common fixtures that can shared in all test cases
 """
 import os
+import tempfile
 import typing as ty
 
 from sqlalchemy.engine import Engine as SQLEngine
@@ -18,10 +19,10 @@ def sql_engine() -> SQLEngine:
     :return: A SQLAlchemy engine
     :rtype: SQLEngine
     """
-    if os.path.exists("/tmp/test.sqlite.db") \
-        and os.path.isfile("/tmp/test.sqlite.db"):
-        os.remove("/tmp/test.sqlite.db")
-    engine = create_engine("sqlite:////tmp/test.sqlite.db", echo=False)
+    file_descriptor, file_name = tempfile.mkstemp()
+    engine = create_engine(f"sqlite:///{file_name}", echo=False)
     Base.metadata.create_all(engine)
     yield engine
-    os.remove("/tmp/test.sqlite.db")
+    # After finishing each test, close the connection to 
+    os.close(file_descriptor)
+    os.unlink(file_name)
