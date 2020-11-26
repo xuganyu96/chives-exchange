@@ -24,12 +24,14 @@
       <div style="flex-grow: 0.1;"> <!--LOGO-->
         <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
       </div>
-      <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
-        <input type="text" style="border: 0px;" placeholder="Search security symbol">
-        <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
-          <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
-        </button>
-      </div>
+      <form id="search-bar-form" style="flex-grow: 1;">
+        <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+          <input type="text" style="border: 0px;" placeholder="Search security symbol">
+          <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+            <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+          </button>
+        </div>
+      </form>
       <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
         <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
         <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
@@ -39,5 +41,18 @@
       <!--Individual page will fill in this part-->
     {% endblock %}
   </div>
+
+  <script>
+    // Add event listener on the search bar form for redirect
+    const searchBarForm = document.querySelector("#search-bar-form")
+    searchBarForm.addEventListener("submit", function(e){
+      e.preventDefault()
+      form = e.target;
+      targetSymbol = form.querySelector('input').value;
+      if(targetSymbol.length > 0){
+        window.location.replace(`/exchange/view_company/${targetSymbol}`)
+      }
+    })
+  </script>
 </body>
 </html>
