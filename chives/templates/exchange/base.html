@@ -44,13 +44,14 @@
 
   <script>
     // Add event listener on the search bar form for redirect
+    const viewCompanyRouteBaseURL = "{{ url_for('exchange.view_company', company_symbol='') }}"
     const searchBarForm = document.querySelector("#search-bar-form")
     searchBarForm.addEventListener("submit", function(e){
       e.preventDefault()
       form = e.target;
       targetSymbol = form.querySelector('input').value;
       if(targetSymbol.length > 0){
-        window.location.replace(`/exchange/view_company/${targetSymbol}`)
+        window.location.replace(`${viewCompanyRouteBaseURL}${targetSymbol}`)
       }
     })
   </script>
