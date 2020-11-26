@@ -89,7 +89,7 @@ def recent_orders():
         ownership).order_by(create_dttm_desc).limit(50).all()
     for order in recent_orders:
         order.side_display = "Buy" if order.side == "bid" else "Sell"
-        order.price_display = f"{order.price:.2f}" if order.price is not None else "any price available"
+        order.price_display = f"${order.price:.2f}" if order.price is not None else "any price available"
         order.create_dttm_display = order.create_dttm.strftime("%Y-%m-%d %H:%M:%S")
     
     return render_template("exchange/recent_orders.html", orders=recent_orders)
