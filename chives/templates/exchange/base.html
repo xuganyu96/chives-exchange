@@ -54,7 +54,7 @@
     const searchBarInput = document.querySelector("#autocomplete-search-input")
     searchBarInput.addEventListener("focus", function(e){
       const http_client = new FetchHTTP("");
-      const autocomplete_comapnies_url = "{{ url_for('exchange.view_company', company_symbol='') }}"
+      const autocomplete_companies_url = "{{ url_for('api.autocomplete_companies') }}"
       http_client.get(autocomplete_comapnies_url)
       .then(function(response){
         acInputInstance.updateData(response)
