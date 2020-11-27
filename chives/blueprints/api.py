@@ -44,14 +44,12 @@ def stock_chart_data():
         }]
     }
     options = {
-      "scales": {
-        "xAxes": [{
-          "type": 'time',
-          "distribution": 'linear',
-          "time": {
-            "unit": 'second'
-          }
-        }]
-      }
+        "scales": {
+            "xAxes": [{
+                "type": 'time',
+                "distribution": 'linear',
+                "time": {"unit": 'second'}
+            }]
+        }
     }
     return jsonify({"data": data, "options": options})
