@@ -30,14 +30,28 @@ def stock_chart_data():
     symbol_filter = Transaction.security_symbol==symbol
     sort_key = Transaction.transact_dttm.asc()
     transactions = db.query(
-        Transaction).filter(symbol_filter).order_by(sort_key)
+        Transaction).filter(symbol_filter).order_by(sort_key).limit(100)
     
-    data = [{'t': t.transact_dttm.isoformat(), 'y': t.price} for t in transactions]
     data = {
         "labels": [t.transact_dttm.isoformat() for t in transactions],
         "datasets": [{
             "label": "Trade prices",
-            "data": [t.price for t in transactions]
+            "data": [{'t': t.transact_dttm.isoformat(), 'y': t.price} for t in transactions],
+            "fill": False,
+            "borderColor": "#1a73e8",
+            "borderWidth": 1,
+            "lineTension": 0
         }]
     }
-    return jsonify(data)
+    options = {
+      "scales": {
+        "xAxes": [{
+          "type": 'time',
+          "distribution": 'linear',
+          "time": {
+            "unit": 'second'
+          }
+        }]
+      }
+    }
+    return jsonify({"data": data, "options": options})

@@ -1,7 +1,7 @@
 {% extends "exchange/base.html" %}
 {% block content %}
 <div style="display: flex; flex-direction: column; align-items: center;"> <!--Main content wrapper-->
-  <div style="flex: 1 1 650px; width: 550px; border: 1px solid #cccccc; border-radius: 15px; display: flex; flex-direction: column; padding: 2rem;"> <!-- Main content-->
+  <div style="flex: 1 1 650px; width: 80%; min-width: 550px; border: 1px solid #cccccc; border-radius: 15px; display: flex; flex-direction: column; padding: 2rem;"> <!-- Main content-->
     <div><!--Row one: Market summary > company name-->
       <span style="font-size: 2rem; color: #cccccc;">Market Summary > </span>
       <span style="font-size: 2rem;">{{ company.name }}</span>
@@ -33,5 +33,25 @@
   const stockChartContainer = stockChartCanvas.parentElement;
   stockChartCanvas.width = stockChartContainer.offsetWidth;
   stockChartCanvas.height = stockChartContainer.offsetHeight;
+  const companySymbol = "{{ company.symbol }}";
+  const fetchClient = new FetchHTTP("");
+
+  let myChart = new Chart(stockChartCanvas, {
+    type: "line",
+    data: {},
+    options: {}
+  })
+
+  function redrawChart(chart, companySymbol){
+    // Request stock data from the /api/stock_chart_data, then reset the entire chart data 
+    fetchClient.get(`/api/stock_chart_data?symbol=${companySymbol}`)
+    .then(function(resp){
+      chart.data = resp.data;
+      chart.options = resp.options;
+      chart.update();
+    })
+  }
+
+  redrawChart(myChart, companySymbol)
   </script>
 {% endblock content %}
