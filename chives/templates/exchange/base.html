@@ -23,7 +23,7 @@
   <div style="display: flex; flex-direction: column; padding: 0px 25px">
     <div style="display: flex; height: 80px; align-items: center;"> <!--The top navigation/search bar is common to all exchange routes-->
       <div style="flex-grow: 0.1;"> <!--LOGO-->
-        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+        <a href="{{ url_for('exchange.dashboard') }}"><span style="margin: 0px 40px 0px 0px; font-size: 2.93rem; color: black; font-weight: 100; font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;">Chives</span></a>
       </div>
       <form id="search-bar-form" style="flex-grow: 1;">
         <div class="input-field" style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
