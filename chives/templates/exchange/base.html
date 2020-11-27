@@ -55,7 +55,7 @@
     searchBarInput.addEventListener("focus", function(e){
       const http_client = new FetchHTTP("");
       const autocomplete_companies_url = "{{ url_for('api.autocomplete_companies') }}"
-      http_client.get(autocomplete_comapnies_url)
+      http_client.get(autocomplete_companies_url)
       .then(function(response){
         acInputInstance.updateData(response)
       })
