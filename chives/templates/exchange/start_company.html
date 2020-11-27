@@ -34,20 +34,24 @@
           <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R3: initial investment-->
             <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Initial investment:</span></div>
             <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-              {{ form.input_cash(placeholder='at least $0.01') }}
+              {{ form.input_cash(placeholder='$1000') }}
               <label for="price">initial investment</label>
               {% if form.input_cash.errors %}
                 <span class="helper-text" style="color: red;">{{ form.input_cash.errors.0 }}</span>
+              {% else %}
+                <span class="helper-text" style="color: #cccccc;">Must be positive</span>
               {% endif %}
             </div>
           </div>
           <div style="display: flex; align-items: center; margin-bottom: 1rem;"> <!--R4: initial number of shares-->
             <div style="margin: 0px 1rem 0px 0px;"><span style="font-size: 1.5rem;">Number of shares:</span></div>
             <div class="input-field" style="flex: 1 1 auto; margin-right: 1rem;">
-              {{ form.size() }}
-              <label for="price">initial investment</label>
+              {{ form.size(placeholder='10') }}
+              <label for="price">initial share size</label>
               {% if form.size.errors %}
                 <span class="helper-text" style="color: red;">{{ form.size.errors.0 }}</span>
+              {% else %}
+              <span class="helper-text" style="color: #cccccc;">Must be positive</span>
               {% endif %}
             </div>
           </div>
