@@ -49,11 +49,13 @@
     const acInput = document.querySelector('#autocomplete-search-input');
     const acInputInstance = M.Autocomplete.init(acInput, {data: {}});
 
-    // Add event listener for refreshing the list of companies when the search bar is highlighted
+    // The browser will request /api/autocomplete_companies to get a dictionary of companies that 
+    // is used to update autocompletes when the search bar input is focused.
     const searchBarInput = document.querySelector("#autocomplete-search-input")
     searchBarInput.addEventListener("focus", function(e){
       const http_client = new FetchHTTP("");
-      http_client.get("/api/autocomplete_companies")
+      const autocomplete_comapnies_url = "{{ url_for('exchange.view_company', company_symbol='') }}"
+      http_client.get(autocomplete_comapnies_url)
       .then(function(response){
         acInputInstance.updateData(response)
       })
