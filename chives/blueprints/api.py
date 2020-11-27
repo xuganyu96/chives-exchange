@@ -17,5 +17,4 @@ def autocomplete_companies():
     db = get_db()
     companies = db.query(Company).all()
     data = {c.symbol: None for c in companies}
-    print(data)
     return jsonify(data)
