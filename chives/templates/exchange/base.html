@@ -75,6 +75,9 @@
     })
 
     // Add event listener on the search bar form for redirect
+    // Note that we are using Jinja template to get the base URL for view_company, but since view_company requires an 
+    // input, I have to trick it by supplying an empty name, which means that there will be a trailing forward slash 
+    // in the base URL.
     const viewCompanyRouteBaseURL = "{{ url_for('exchange.view_company', company_symbol='') }}"
     const searchBarForm = document.querySelector("#search-bar-form")
     searchBarForm.addEventListener("submit", function(e){
