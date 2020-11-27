@@ -23,7 +23,7 @@
   <div style="display: flex; flex-direction: column; padding: 0px 25px">
     <div style="display: flex; height: 80px; align-items: center;"> <!--The top navigation/search bar is common to all exchange routes-->
       <div style="flex-grow: 0.1;"> <!--LOGO-->
-        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+        <a href="{{ url_for('exchange.dashboard') }}"><span style="margin: 0px 40px 0px 0px; font-size: 2.93rem; color: black; font-weight: 100; font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;">Chives</span></a>
       </div>
       <form id="search-bar-form" style="flex-grow: 1;">
         <div class="input-field" style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
@@ -34,8 +34,14 @@
         </div>
       </form>
       <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+        <a class="dropdown-trigger waves-effect waves-light btn" style="margin: 0px 10px; height: 50%; display: flex; justify-content: center; align-items: center;" data-target='trade-dropdown'><span class="white-text" style="margin: auto 1rem;">TRADE</span></a>
+        <ul id='trade-dropdown' class='dropdown-content collection'>
+          <li class="collection-item" style="display: flex; align-items: center;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.submit_order') }}" style="width: 8rem; display: flex; align-items: center;"><span style="color: black;">Submit order</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.start_company') }}" style="width: 8rem; display: flex; align-items: center;"><span style="color: black;">Start company</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.recent_orders') }}" style="width: 8rem; display: flex; align-items: center;"><span style="color: black;">Recent orders</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.recent_transactions') }}" style="width: 8rem; display: flex; align-items: center;"><span style="color: black;">Recent trades</span></a></li>
+        </ul>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;" href="{{ url_for('auth.logout') }}"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
       </div>
     </div>
     {% block content %}
@@ -47,7 +53,14 @@
     // Initializing autocomplete
     // query the /api/exchange/get_company_symbols route to get a list of company symbols and names
     const acInput = document.querySelector('#autocomplete-search-input');
-    const acInputInstance = M.Autocomplete.init(acInput, {data: {}});
+    const acInputInstance = M.Autocomplete.init(acInput, {data: {}, limit: 10});
+    // Initiailize dropdown menu
+    const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+    const dropdownTriggerInstances = M.Dropdown.init(dropdownTriggers, {
+      alignment: "right",
+      constrainWidth: false,
+      coverTrigger: false
+    });
 
     // The browser will request /api/autocomplete_companies to get a dictionary of companies that 
     // is used to update autocompletes when the search bar input is focused.
@@ -62,6 +75,9 @@
     })
 
     // Add event listener on the search bar form for redirect
+    // Note that we are using Jinja template to get the base URL for view_company, but since view_company requires an 
+    // input, I have to trick it by supplying an empty name, which means that there will be a trailing forward slash 
+    // in the base URL.
     const viewCompanyRouteBaseURL = "{{ url_for('exchange.view_company', company_symbol='') }}"
     const searchBarForm = document.querySelector("#search-bar-form")
     searchBarForm.addEventListener("submit", function(e){
@@ -69,7 +85,9 @@
       form = e.target;
       targetSymbol = form.querySelector('input').value;
       if(targetSymbol.length > 0){
-        window.location.replace(`${viewCompanyRouteBaseURL}${targetSymbol}`)
+        // I used href instead of location.replace because I want to simulate a link-click
+        // such that "going back" can return to the actual previous page
+        window.location.href = `${viewCompanyRouteBaseURL}${targetSymbol}`;
       }
     })
   </script>
