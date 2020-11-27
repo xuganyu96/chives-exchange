@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- My CSS and JS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='fetchHTTP.js') }}"></script>
+  {% if title %}
+    <title> {{ title }}</title>
+  {% else %}
+    <title> Chives Exchange </title>
+  {% endif %}
+</head>
+<body>
+  <div style="display: flex; flex-direction: column; padding: 0px 25px">
+    <div style="display: flex; height: 80px; align-items: center;"> <!--The top navigation/search bar is common to all exchange routes-->
+      <div style="flex-grow: 0.1;"> <!--LOGO-->
+        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
+      </div>
+      <form id="search-bar-form" style="flex-grow: 1;">
+        <div class="input-field" style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
+          <input type="text" style="border: 0px;" placeholder="Search security symbol" class="autocomplete" id='autocomplete-search-input'>
+          <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
+            <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
+          </button>
+        </div>
+      </form>
+      <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+      </div>
+    </div>
+    {% block content %}
+      <!--Individual page will fill in this part-->
+    {% endblock %}
+  </div>
+
+  <script>
+    // Initializing autocomplete
+    // query the /api/exchange/get_company_symbols route to get a list of company symbols and names
+    const acInput = document.querySelector('#autocomplete-search-input');
+    const acInputInstance = M.Autocomplete.init(acInput, {data: {}});
+
+    // The browser will request /api/autocomplete_companies to get a dictionary of companies that 
+    // is used to update autocompletes when the search bar input is focused.
+    const searchBarInput = document.querySelector("#autocomplete-search-input")
+    searchBarInput.addEventListener("focus", function(e){
+      const http_client = new FetchHTTP("");
+      const autocomplete_companies_url = "{{ url_for('api.autocomplete_companies') }}"
+      http_client.get(autocomplete_comapnies_url)
+      .then(function(response){
+        acInputInstance.updateData(response)
+      })
+    })
+
+    // Add event listener on the search bar form for redirect
+    const viewCompanyRouteBaseURL = "{{ url_for('exchange.view_company', company_symbol='') }}"
+    const searchBarForm = document.querySelector("#search-bar-form")
+    searchBarForm.addEventListener("submit", function(e){
+      e.preventDefault()
+      form = e.target;
+      targetSymbol = form.querySelector('input').value;
+      if(targetSymbol.length > 0){
+        window.location.replace(`${viewCompanyRouteBaseURL}${targetSymbol}`)
+      }
+    })
+  </script>
+</body>
+</html>

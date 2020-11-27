@@ -58,6 +58,10 @@ small {
     font-weight: 500;
 }
 
+.dropdown-content li>span {
+    color: var(--text-secondary-color);
+}
+
 .main-view {
     /* The outermost container that uses a margin to ensure that there is a padding on the top */
     display: flex;

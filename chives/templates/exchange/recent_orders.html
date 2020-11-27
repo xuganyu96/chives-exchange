@@ -1,78 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Materialize CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <!-- Google Fonts -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <!-- My CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <title>Place order</title>
-</head>
-<body>
-  <div style="display: flex; flex-direction: column; padding: 0px 25px">
-    <div style="display: flex; height: 80px; align-items: center;"> <!--This is the top navbar-->
-      <div style="flex-grow: 0.1;"> <!--LOGO-->
-        <h3 style="margin: 0px 40px 0px 0px">Chives</h3>
-      </div>
-      <div style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
-        <input type="text" style="border: 0px;" placeholder="Search security symbol">
-        <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
-          <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
-        </button>
-      </div>
-      <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
-      </div>
-    </div>
-    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 2rem;"> <!--This is the container for the view-->
-      <div style="flex: 1 1 auto; border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 2rem; width: 650px;"> <!-- Actual content -->
-        {% if orders|length < 1 %}
-          <div><span style="font-size: 2rem;">No recent orders</span></div>
-        {% else %}
-          <div><span style="font-size: 2rem;">Recent orders</span></div> <!-- Title: recent orders -->
-          <div style="height: 400px; overflow-y: scroll;"> <!-- Collection of recent orders-->
-            <ul class="collection">
-              {% for order in orders %}
-              <li class="collection-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 1rem;">
-                <div style="display: flex; align-items: center; width: 100%; margin-bottom: 1rem;"> <!--Row one: Buy XXX shares of YYY-->
-                  <div style="flex: 1 1 auto; display: flex; flex-direction: column;">
-                    <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">{{ order.side_display }} {{ order.size }} shares of {{ order.security_symbol }}</span>
-                    <span style="font-size: 1.5rem;">at ${{ order.price_display }}</span>
-                  </div>
-                  <div style="flex: 0 1 auto; justify-self: flex-end; display: flex; flex-direction: column;">
-                    <span style="font-size: 1rem; color: grey">Submitted at</span>
-                    <span style="font-size: 1rem; color: grey">{{ order.create_dttm_display }} UTC</span>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: center;"> <!-- Row two: tags! AON, IOC, Active, Cancelled-->
-                  {% if order.all_or_none %}
-                    <div class="chip">All-or-none</div>
-                  {% endif %}
-                  {% if order.immediate_or_cancel %}
-                    <div class="chip">Immediate-or-cancel</div>
-                  {% endif %}
-                  {% if order.active %}
-                    <div class="chip">Active</div>
-                  {% endif %}
-                  {% if order.cancelled_dttm is not none %}
-                    <div class="chip">Cancelled</div>
-                  {% endif %}
-                </div>
-              </li>
-              {% endfor %}
-            </ul>
+{% extends "exchange/base.html" %}
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; margin-top: 2rem;"> <!--This is the container for the view-->
+  <div style="flex: 1 1 auto; border: 1px solid #cccccc; border-radius: 15px; box-sizing: border-box; padding: 2rem; width: 650px;"> <!-- Actual content -->
+    {% if orders|length < 1 %}
+    <div><span style="font-size: 2rem;">No recent orders</span></div>
+    {% else %}
+    <div><span style="font-size: 2rem;">Recent orders</span></div> <!-- Title: recent orders -->
+    <div style="height: 400px; overflow-y: scroll;"> <!-- Collection of recent orders-->
+      <ul class="collection">
+        {% for order in orders %}
+        <li class="collection-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 1rem;">
+          <div style="display: flex; align-items: center; width: 100%; margin-bottom: 1rem;"> <!--Row one: Buy XXX shares of YYY-->
+            <div style="flex: 1 1 auto; display: flex; flex-direction: column;">
+              <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">{{ order.side_display }} {{ order.size }} shares of {{ order.security_symbol }}</span>
+              <span style="font-size: 1.5rem;">at {{ order.price_display }}</span>
+            </div>
+            <div style="flex: 0 1 auto; justify-self: flex-end; display: flex; flex-direction: column;">
+              <span style="font-size: 1rem; color: grey">Submitted at</span>
+              <span style="font-size: 1rem; color: grey">{{ order.create_dttm_display }} UTC</span>
+            </div>
           </div>
-        {% endif %}
-      </div>
+          <div style="display: flex; align-items: center;"> <!-- Row two: tags! AON, IOC, Active, Cancelled-->
+            {% if order.all_or_none %}
+              <div class="chip">All-or-none</div>
+            {% endif %}
+            {% if order.immediate_or_cancel %}
+              <div class="chip">Immediate-or-cancel</div>
+            {% endif %}
+            {% if order.active %}
+              <div class="chip">Active</div>
+            {% endif %}
+            {% if order.cancelled_dttm is not none %}
+              <div class="chip">Cancelled</div>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
+    {% endif %}
   </div>
-</body>
-</html>
+</div>
+{% endblock content %}

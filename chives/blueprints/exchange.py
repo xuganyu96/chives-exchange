@@ -30,7 +30,7 @@ def dashboard():
         stock.market_value = market_price * stock.asset_amount
         net_worth += stock.market_value
     return render_template("exchange/dashboard.html", 
-        cash=cash, stocks=stocks, net_worth=net_worth)
+        cash=cash, stocks=stocks, net_worth=net_worth, title="Dashboard")
 
 @bp.route("/submit_order", methods=("GET", "POST"))
 @login_required
@@ -74,7 +74,8 @@ def submit_order():
                 exchange='', routing_key='incoming_order', body=new_order.json)
 
         return redirect(url_for("exchange.dashboard"))
-    return render_template("exchange/submit_order.html", form=form)
+    return render_template(
+        "exchange/submit_order.html", form=form, title="Submit order")
 
 
 @bp.route("/recent_orders", methods=("GET",))
@@ -89,10 +90,11 @@ def recent_orders():
         ownership).order_by(create_dttm_desc).limit(50).all()
     for order in recent_orders:
         order.side_display = "Buy" if order.side == "bid" else "Sell"
-        order.price_display = f"{order.price:.2f}" if order.price is not None else "any price available"
+        order.price_display = f"${order.price:.2f}" if order.price is not None else "any price available"
         order.create_dttm_display = order.create_dttm.strftime("%Y-%m-%d %H:%M:%S")
     
-    return render_template("exchange/recent_orders.html", orders=recent_orders)
+    return render_template(
+        "exchange/recent_orders.html", orders=recent_orders, title="Recent orders")
 
 
 @bp.route("/recent_transactions", methods=("GET",))
@@ -112,8 +114,9 @@ def recent_transactions():
         t.side_display = "Bought" if (t.bid_id in order_ids) else "Sold"
         t.dttm_display = t.transact_dttm.strftime("%Y-%m-%d %H:%M:%S")
     
-    return render_template("exchange/recent_transactions.html", 
-        transactions=transactions)
+    return render_template(
+        "exchange/recent_transactions.html", 
+        transactions=transactions, title="Recent transactions")
 
 
 @bp.route("/view_company/<company_symbol>", methods=("GET",))
@@ -128,7 +131,8 @@ def view_company(company_symbol):
     else:
         company.create_date_display = company.create_dttm.strftime("%Y-%m-%d")
         company.founder_name = db.query(User).get(company.founder_id).username
-        return render_template("exchange/view_company.html", company=company)
+        return render_template("exchange/view_company.html", 
+            company=company, title=f"Company: {company_symbol}")
 
 
 @bp.route("/start_company", methods=("GET", "POST"))
@@ -160,7 +164,8 @@ def start_company():
         db.commit()
 
         return redirect(url_for("exchange.dashboard"))
-    return render_template("exchange/start_company.html", form=form)
+    return render_template(
+        "exchange/start_company.html", form=form, title="Start company")
 
 
 @bp.route("/error", methods=("GET",))
@@ -168,4 +173,4 @@ def error():
     error_msg = "Something went wrong..."
     if 'error_msg' in request.args:
         error_msg = request.args['error_msg']
-    return render_template("exchange/error.html", error_msg=error_msg)
+    return render_template("exchange/error.html", error_msg=error_msg, title="Error")
