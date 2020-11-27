@@ -12,8 +12,8 @@
     <div><!--Row 3: price-->
       <span style="font-size: 1.5rem;">Market price: {{ "$%.2f"|format(company.market_price) }}</span>
     </div>
-    <div style="flex-basis: 280px; border: 1px solid #cccccc; margin: 2rem 0rem;"><!--Row 4: GRAPH-->
-      <span style="font-size: 5rem; color: #cccccc;">Placeholder for the GRAPH</span>
+    <div style="flex: 1 0 280px; border: 1px solid #cccccc; margin: 2rem 0rem;"><!--Row 4: GRAPH-->
+      <canvas id="stock-chart-canvas" width="400" height="400"></canvas>
     </div>
     <div> <!--Row 5: Description-->
       <span style="font-size: 2rem;">Company description</span>
@@ -25,4 +25,13 @@
     </div>
   </div>
 </div>
+
+<script>
+  // The sizing of a canvas element is set directly on the element attribute instead of styling, so it needs to be set 
+  // on JavaScript
+  const stockChartCanvas = document.querySelector("#stock-chart-canvas");
+  const stockChartContainer = stockChartCanvas.parentElement;
+  stockChartCanvas.width = stockChartContainer.offsetWidth;
+  stockChartCanvas.height = stockChartContainer.offsetHeight;
+  </script>
 {% endblock content %}
