@@ -41,7 +41,7 @@
           <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.recent_orders') }}"><span style="color: black;">Recent orders</span></a></li>
           <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.recent_transactions') }}"><span style="color: black;">Recent trades</span></a></li>
         </ul>
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;" href="{{ url_for('auth.logout') }}"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
       </div>
     </div>
     {% block content %}
@@ -53,7 +53,7 @@
     // Initializing autocomplete
     // query the /api/exchange/get_company_symbols route to get a list of company symbols and names
     const acInput = document.querySelector('#autocomplete-search-input');
-    const acInputInstance = M.Autocomplete.init(acInput, {data: {}});
+    const acInputInstance = M.Autocomplete.init(acInput, {data: {}, limit: 10});
     // Initiailize dropdown menu
     const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
     const dropdownTriggerInstances = M.Dropdown.init(dropdownTriggers, {
