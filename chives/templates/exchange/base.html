@@ -69,7 +69,9 @@
       form = e.target;
       targetSymbol = form.querySelector('input').value;
       if(targetSymbol.length > 0){
-        window.location.replace(`${viewCompanyRouteBaseURL}${targetSymbol}`)
+        // I used href instead of location.replace because I want to simulate a link-click
+        // such that "going back" can return to the actual previous page
+        window.location.href = `${viewCompanyRouteBaseURL}${targetSymbol}`;
       }
     })
   </script>
