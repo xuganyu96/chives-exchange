@@ -33,4 +33,11 @@ def stock_chart_data():
         Transaction).filter(symbol_filter).order_by(sort_key)
     
     data = [{'t': t.transact_dttm.isoformat(), 'y': t.price} for t in transactions]
+    data = {
+        "labels": [t.transact_dttm.isoformat() for t in transactions],
+        "datasets": [{
+            "label": "Trade prices",
+            "data": [t.price for t in transactions]
+        }]
+    }
     return jsonify(data)
