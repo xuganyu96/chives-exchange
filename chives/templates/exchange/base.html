@@ -34,7 +34,13 @@
         </div>
       </form>
       <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">person</i></a>
+        <a class="dropdown-trigger waves-effect waves-light btn" style="margin: 0px 10px; height: 50%; display: flex; justify-content: center; align-items: center;" data-target='trade-dropdown'><span class="white-text" style="margin: auto 1rem;">TRADE</span></a>
+        <ul id='trade-dropdown' class='dropdown-content collection'>
+          <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.submit_order') }}"><span style="color: black;">Submit order</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.start_company') }}"><span style="color: black;">Start company</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.recent_orders') }}"><span style="color: black;">Recent orders</span></a></li>
+          <li class="collection-item" style="display: flex; align-items: center; padding: 1rem;"><a href="{{ url_for('exchange.recent_transactions') }}"><span style="color: black;">Recent trades</span></a></li>
+        </ul>
         <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
       </div>
     </div>
@@ -48,6 +54,13 @@
     // query the /api/exchange/get_company_symbols route to get a list of company symbols and names
     const acInput = document.querySelector('#autocomplete-search-input');
     const acInputInstance = M.Autocomplete.init(acInput, {data: {}});
+    // Initiailize dropdown menu
+    const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+    const dropdownTriggerInstances = M.Dropdown.init(dropdownTriggers, {
+      alignment: "right",
+      constrainWidth: false,
+      coverTrigger: false
+    });
 
     // The browser will request /api/autocomplete_companies to get a dictionary of companies that 
     // is used to update autocompletes when the search bar input is focused.
