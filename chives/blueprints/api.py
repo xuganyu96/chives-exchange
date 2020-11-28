@@ -39,19 +39,19 @@ def stock_chart_data():
     if zoom == "day":
         cutoff -= dt.timedelta(hours=24)
         agg_length = dt.timedelta(minutes=5)
-        scale_unit = "minute"
+        scale_unit = "hour"
     elif zoom == "month":
         cutoff -= dt.timedelta(days=30)
         agg_length = dt.timedelta(days=0.5)
-        scale_unit = "day"
+        scale_unit = "week"
     elif zoom == "year":
         cutoff -= dt.timedelta(days=365)
         agg_length = dt.timedelta(days=1)
-        scale_unit = "day"
+        scale_unit = "month"
     else:
         cutoff -= dt.timedelta(days=10*365)
         agg_length = dt.timedelta(days=7)
-        scale_unit = "week"
+        scale_unit = "quarter"
     tfilter = tfilter & (Transaction.transact_dttm >= cutoff)
 
     sort_key = Transaction.transact_dttm.asc()
@@ -61,9 +61,9 @@ def stock_chart_data():
     df = pd.read_sql(query.statement, db.bind)[['transact_dttm', 'price']]
     df['td_from_min'] = df['transact_dttm'] - df['transact_dttm'].min()
     df['bucket_idx'] = (df['td_from_min'] / agg_length).astype(int)
-    max_price = df['price'].max()
-    min_price = df['price'].min()
-    price_std = df['price'].std()
+    max_price = 0 if pd.isna(df['price'].max()) else df['price'].max()
+    min_price = 0 if pd.isna(df['price'].min()) else df['price'].min()
+    price_std = 0 if pd.isna(df['price'].std()) else df['price'].std()
     dttm_price_pair = []
     for bucket in df['bucket_idx'].unique():
         partition = df.loc[df['bucket_idx'] == bucket]
