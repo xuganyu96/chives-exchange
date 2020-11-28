@@ -126,15 +126,18 @@ if __name__ == "__main__":
 
     start = time.time()
     now = dt.datetime.utcnow()
+    five_years_ago = now - dt.timedelta(days=365*5)
     a_year_ago = now - dt.timedelta(days=365)
     month_ago = now - dt.timedelta(days=30)
     day_ago = now - dt.timedelta(days=1)
+    # Some tradings 5 year from today
+    simulate_trading(5000, "X", me, start_dttm=five_years_ago, end_dttm=now)
     # Some tradings 1 year from today
-    simulate_trading(200, "X", me, start_dttm=a_year_ago, end_dttm=now)
+    simulate_trading(1000, "X", me, start_dttm=a_year_ago, end_dttm=now)
     # Some tradings 1 month from today
-    simulate_trading(200, "X", me, start_dttm=month_ago, end_dttm=now)
+    simulate_trading(1000, "X", me, start_dttm=month_ago, end_dttm=now)
     # Some tradings 24 hours ago
-    simulate_trading(100, "X", me, start_dttm=day_ago, end_dttm=now)
+    simulate_trading(500, "X", me, start_dttm=day_ago, end_dttm=now)
     rtime = time.time() - start 
     print(f"Finished in {rtime:.2f} seconds")
 

@@ -42,7 +42,7 @@ def stock_chart_data():
         scale_unit = "minute"
     elif zoom == "month":
         cutoff -= dt.timedelta(days=30)
-        agg_length = dt.timedelta(days=1)
+        agg_length = dt.timedelta(days=0.5)
         scale_unit = "day"
     elif zoom == "year":
         cutoff -= dt.timedelta(days=365)
