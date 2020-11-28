@@ -79,7 +79,9 @@ def simulate_trading(nrounds: int, symbol: str, matching_engine: MatchingEngine)
     for r in range(nrounds):
         random_size = random.randint(1, 100)
         random_price = random.uniform(10, 100)
-        inject_asset(seller.user_id, symbol, random_size)
+        injected_asset = inject_asset(seller.user_id, symbol, random_size)
+        injected_asset.asset_amount -= random_size
+        matching_engine.session.commit()
         ask = Order(
             security_symbol=symbol,
             side="ask",
