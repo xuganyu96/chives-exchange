@@ -104,4 +104,20 @@ if __name__ == "__main__":
     os.remove("/tmp/chives.sqlite")
     Base.metadata.create_all(sql_engine)
 
-    simulate_trading(100000, "X", me)
+    start = time.time()
+    simulate_trading(1000, "X", me)
+    rtime = time.time() - start 
+    print(f"Finished in {rtime:.2f} seconds")
+
+    transactions = me.session.query(
+        Transaction).order_by(Transaction.transact_dttm.asc()).all()
+    start_dttm = dt.datetime(2020, 1, 1).timestamp()
+    end_dttm = dt.datetime.utcnow().timestamp()
+    random_dttm = [
+        dt.datetime.fromtimestamp(random.uniform(start_dttm, end_dttm))
+        for i in range(len(transactions))]
+    random_dttm.sort()
+    
+    for i, t in enumerate(transactions):
+        t.transact_dttm = random_dttm[i]
+    me.session.commit()
