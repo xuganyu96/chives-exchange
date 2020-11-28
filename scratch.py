@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import random
+import os
 import time
 
 from sqlalchemy import create_engine
@@ -8,7 +9,7 @@ import pika
 from werkzeug.security import generate_password_hash 
 
 from chives.db import SQLALCHEMY_URI
-from chives.models.models import Order, Transaction, Asset, User, Company
+from chives.models.models import Order, Transaction, Asset, User, Company, Base
 from chives.matchingengine.matchingengine import MatchingEngine
 
 sql_engine = create_engine(SQLALCHEMY_URI, echo=False)
@@ -99,3 +100,32 @@ def simulate_trading(nrounds: int, symbol: str, matching_engine: MatchingEngine)
         matching_engine.heartbeat(ask)
         matching_engine.heartbeat(bid)
 
+if __name__ == "__main__":
+    # Reset the database
+    print("Removing old data")
+    os.remove("/tmp/chives.sqlite")
+    Base.metadata.create_all(sql_engine)
+
+    # Simulate trading
+    for s in ["FB", "AAPL", "AMZN", "NFLX", "GOOGL"]:
+        start = time.time()
+        print(f"Simulate trading {s}")
+        simulate_trading(100, s, me)
+        rtime = time.time() - start
+        print(f"Simulation finished in {rtime:.2f} seconds")
+    transactions = me.session.query(
+        Transaction).order_by(Transaction.transact_dttm.asc()).all()
+    
+    # Generate random timestamps
+    start_dttm = dt.datetime(2010, 1, 1).timestamp()
+    end_dttm = dt.datetime.utcnow().timestamp()
+    random_dttms = [dt.datetime.fromtimestamp(random.uniform(start_dttm, 
+                                                          end_dttm)) 
+                    for i in range(len(transactions))]
+    random_dttms.sort()
+    
+    # Apply random transaction dates to the transactions
+    for i, t in enumerate(transactions):
+        t.transact_dttm = random_dttms[i]
+    
+    me.session.commit()
