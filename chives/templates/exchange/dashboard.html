@@ -3,7 +3,7 @@
 <div style="display: flex; flex-direction: column">
   <div style="flex: 1 1 200px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 2rem;"> <!--Net worth wrapper-->
     <span style="font-size: 2rem;">Net Worth</span>
-    <span style="font-size: 4rem;">${{ "%.2f"|format(net_worth) }}</span>
+    <span style="font-size: 4rem;">${{ net_worth }}</span>
   </div>
   <div style="flex: 1 1 330px; border: 1px solid #cccccc; border-radius: 25px; display: flex; flex-direction: column; padding: 2rem;"> <!--Individual asset horizontal scroll-->
     <div style="flex: 0 1 1.5rem; display: flex; margin-bottom: 1rem;"><span style="font-size: 1.5rem;">Individual assets</span></div>
@@ -11,18 +11,18 @@
       <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
         <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <span class="card-title">Cash</span>
-          <span>${{ "%.2f"|format(cash.asset_amount) }}</span>
+          <span>${{ cash.asset_amount_display }}</span>
         </div>
       </div>
       {% for stock in stocks %}
       <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
         <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <span class="card-title">{{ stock.asset_symbol }}</span>
-          <span>{{ stock.asset_amount|int }} shares</span>
+          <span>{{ stock.asset_amount_display }} shares</span>
         </div>
         <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
           <span class="grey-text" style="font-size: 16px;">Market Value</span>
-          <span class="grey-text" style="font-size: 16px;">${{ "%.2f"|format(stock.market_value) }}</span>
+          <span class="grey-text" style="font-size: 16px;">${{ stock.market_value_display }}</span>
         </div>
       </div>
       {% endfor %}

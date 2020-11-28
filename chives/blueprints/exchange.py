@@ -1,3 +1,4 @@
+from babel.numbers import format_number
 from flask import (
     Blueprint, flash, g as flask_g, redirect, render_template, request, 
     session as flask_session, url_for
@@ -18,6 +19,7 @@ def dashboard():
     db = get_db()
     # Any amount of cash will be displayed
     cash = [a for a in current_user.assets if (a.asset_symbol == "_CASH")][0]
+    cash.asset_amount_display = format_number(cash.asset_amount, locale="en_US")
     # Empty assets for stocks will not be displayed
     stocks = [a for a in current_user.assets 
         if (a.asset_symbol != "_CASH") and (a.asset_amount > 0)]
@@ -28,9 +30,13 @@ def dashboard():
     for stock in stocks:
         market_price = db.query(Company).get(stock.asset_symbol).market_price
         stock.market_value = market_price * stock.asset_amount
+        stock.market_value_display = format_number(stock.market_value, locale="en_US")
+        stock.asset_amount_display = format_number(
+            int(stock.asset_amount), locale="en_US")
         net_worth += stock.market_value
+    net_worth_display = format_number(net_worth, locale="en_US")
     return render_template("exchange/dashboard.html", 
-        cash=cash, stocks=stocks, net_worth=net_worth, title="Dashboard")
+        cash=cash, stocks=stocks, net_worth=net_worth_display, title="Dashboard")
 
 @bp.route("/submit_order", methods=("GET", "POST"))
 @login_required
