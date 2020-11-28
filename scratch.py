@@ -121,9 +121,11 @@ def simulate_trading(nrounds: int, symbol: str, matching_engine: MatchingEngine,
     matching_engine.session.commit()
 
 if __name__ == "__main__":
+    print("Removing old data")
     os.remove("/tmp/chives.sqlite")
     Base.metadata.create_all(sql_engine)
 
+    print("Starting simulated trades")
     start = time.time()
     now = dt.datetime.utcnow()
     five_years_ago = now - dt.timedelta(days=365*5)
@@ -131,13 +133,13 @@ if __name__ == "__main__":
     month_ago = now - dt.timedelta(days=30)
     day_ago = now - dt.timedelta(days=1)
     # Some tradings 5 year from today
-    simulate_trading(5000, "X", me, start_dttm=five_years_ago, end_dttm=now)
+    simulate_trading(200, "X", me, start_dttm=five_years_ago, end_dttm=now)
     # Some tradings 1 year from today
-    simulate_trading(1000, "X", me, start_dttm=a_year_ago, end_dttm=now)
+    simulate_trading(200, "X", me, start_dttm=a_year_ago, end_dttm=now)
     # Some tradings 1 month from today
-    simulate_trading(1000, "X", me, start_dttm=month_ago, end_dttm=now)
+    simulate_trading(200, "X", me, start_dttm=month_ago, end_dttm=now)
     # Some tradings 24 hours ago
-    simulate_trading(500, "X", me, start_dttm=day_ago, end_dttm=now)
+    simulate_trading(200, "X", me, start_dttm=day_ago, end_dttm=now)
     rtime = time.time() - start 
     print(f"Finished in {rtime:.2f} seconds")
 
