@@ -327,7 +327,6 @@ class MatchingEngine:
         if incoming.remaining_size == incoming.size:
             mr.incoming_remain = mr.incoming
             mr.incoming_remain.active = mr.incoming.active = True
-            print(mr.incoming.active, mr.incoming_remain.active)
         elif incoming.remaining_size > 0:
             mr.incoming_remain = incoming.create_suborder()
             mr.incoming_remain.active = True
