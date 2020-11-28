@@ -12,10 +12,18 @@
     <div><!--Row 3: price-->
       <span style="font-size: 1.5rem;">Market price: {{ "$%.2f"|format(company.market_price) }}</span>
     </div>
-    <div style="flex: 1 0 280px; border: 1px solid #cccccc; margin: 2rem 0rem;"><!--Row 4: GRAPH-->
+    <div><!--Row 4: zoom level buttons-->
+      <div style="display: flex; justify-content: space-around; border-bottom: 1px solid #cccccc;">
+        <a class="waves-effect btn-flat black-text" style="flex-grow: 1; display: flex; justify-content: center;" id="set-zoom-day" zoom="day">day</a>
+        <a class="waves-effect btn-flat black-text" style="flex-grow: 1; display: flex; justify-content: center;" id="set-zoom-month" zoom="month">month</a>
+        <a class="waves-effect btn-flat black-text" style="flex-grow: 1; display: flex; justify-content: center;" id="set-zoom-year" zoom="year">year</a>
+        <a class="waves-effect btn-flat black-text" style="flex-grow: 1; display: flex; justify-content: center;" id="set-zoom-max" zoom="max">max</a>
+      </div>
+    </div>
+    <div style="flex: 1 0 280px; margin: 0rem 0rem;"><!--Row 5: GRAPH-->
       <canvas id="stock-chart-canvas" width="400" height="400"></canvas>
     </div>
-    <div> <!--Row 5: Description-->
+    <div> <!--Row 6: Description-->
       <span style="font-size: 2rem;">Company description</span>
       <p>
         {{ company.name }} was founded on {{ company.create_date_display }} by {{ company.founder_name}} with an 
@@ -36,15 +44,15 @@
   const companySymbol = "{{ company.symbol }}";
   const fetchClient = new FetchHTTP("");
 
-  let myChart = new Chart(stockChartCanvas, {
+  let stockChart = new Chart(stockChartCanvas, {
     type: "line",
     data: {},
     options: {}
   })
 
-  function redrawChart(chart, companySymbol){
+  function redrawChart(chart, companySymbol, zoom){
     // Request stock data from the /api/stock_chart_data, then reset the entire chart data 
-    fetchClient.get(`/api/stock_chart_data?symbol=${companySymbol}`)
+    fetchClient.get(`/api/stock_chart_data?symbol=${companySymbol}&zoom=${zoom}`)
     .then(function(resp){
       chart.data = resp.data;
       chart.options = resp.options;
@@ -52,6 +60,22 @@
     })
   }
 
-  redrawChart(myChart, companySymbol)
+  // Upon the loading of the page, draw with "day", and change "day" button to darken
+  redrawChart(stockChart, companySymbol, "day")
+  document.querySelector("#set-zoom-day").style.backgroundColor = "#cccccc";
+
+  // Add event listener to "clicking" of each of the set-zoom-XXX button
+  clickEvent = function(e){
+    // Find all its siblings and set everyone's background color to be white, then set itself to be dark and 
+    // redraw the chart
+    buttonContainer = e.target.parentElement;
+    buttonContainer.querySelectorAll("a").forEach(function(a){a.style.backgroundColor = "white";})
+    e.target.style.backgroundColor = "#cccccc";
+    redrawChart(stockChart, companySymbol, e.target.getAttribute("zoom"));
+  }
+  document.querySelector("#set-zoom-day").addEventListener("click", clickEvent)
+  document.querySelector("#set-zoom-month").addEventListener("click", clickEvent)
+  document.querySelector("#set-zoom-year").addEventListener("click", clickEvent)
+  document.querySelector("#set-zoom-max").addEventListener("click", clickEvent)
   </script>
 {% endblock content %}
