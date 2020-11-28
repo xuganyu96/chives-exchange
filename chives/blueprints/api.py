@@ -49,19 +49,21 @@ def stock_chart_data():
         agg_length = dt.timedelta(days=1)
         scale_unit = "day"
     else:
-        cutoff -= dt.tiemdelta(days=10*365)
+        cutoff -= dt.timedelta(days=10*365)
         agg_length = dt.timedelta(days=7)
         scale_unit = "week"
     tfilter = tfilter & (Transaction.transact_dttm >= cutoff)
 
     sort_key = Transaction.transact_dttm.asc()
     query = db.query(Transaction).filter(tfilter).order_by(sort_key)
-    transactions = query.all()
 
     # Convert the set of transactions into a 2 column dataframe: price vs dttm
     df = pd.read_sql(query.statement, db.bind)[['transact_dttm', 'price']]
     df['td_from_min'] = df['transact_dttm'] - df['transact_dttm'].min()
     df['bucket_idx'] = (df['td_from_min'] / agg_length).astype(int)
+    max_price = df['price'].max()
+    min_price = df['price'].min()
+    price_std = df['price'].std()
     dttm_price_pair = []
     for bucket in df['bucket_idx'].unique():
         partition = df.loc[df['bucket_idx'] == bucket]
@@ -86,6 +88,12 @@ def stock_chart_data():
                 "type": 'time',
                 "distribution": 'linear',
                 "time": {"unit": scale_unit}
+            }],
+            "yAxes": [{
+                "ticks": {
+                    "suggestedMax": max_price + 0.7 * price_std,
+                    "suggestedMin": max(0, min_price - 0.7 * price_std)
+                }
             }]
         }
     }
