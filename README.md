@@ -29,4 +29,6 @@ python -m chives webserver
 ```
 
 You can now follow the demo [here](https://xuganyu96.github.io/chives-exchange/) 
-to try it out.
+to try it out, or you can run `reset_and_simulate.py` to inject dummy users and 
+trades, then sign-in to `buyer` or `seller` with dummy `password` to explore 
+the UI.
