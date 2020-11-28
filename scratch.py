@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import random
+import os
 import time
 
 from sqlalchemy import create_engine
@@ -8,7 +9,7 @@ import pika
 from werkzeug.security import generate_password_hash 
 
 from chives.db import SQLALCHEMY_URI
-from chives.models.models import Order, Transaction, Asset, User, Company
+from chives.models.models import Order, Transaction, Asset, User, Company, Base
 from chives.matchingengine.matchingengine import MatchingEngine
 
 sql_engine = create_engine(SQLALCHEMY_URI, echo=False)
@@ -99,3 +100,8 @@ def simulate_trading(nrounds: int, symbol: str, matching_engine: MatchingEngine)
         matching_engine.heartbeat(ask)
         matching_engine.heartbeat(bid)
 
+if __name__ == "__main__":
+    os.remove("/tmp/chives.sqlite")
+    Base.metadata.create_all(sql_engine)
+
+    simulate_trading(100000, "X", me)
