@@ -125,22 +125,15 @@ if __name__ == "__main__":
     os.remove("/tmp/chives.sqlite")
     Base.metadata.create_all(sql_engine)
 
-    print("Starting simulated trades")
-    start = time.time()
-    now = dt.datetime.utcnow()
-    five_years_ago = now - dt.timedelta(days=365*5)
-    a_year_ago = now - dt.timedelta(days=365)
-    month_ago = now - dt.timedelta(days=30)
-    day_ago = now - dt.timedelta(days=1)
-    # Some tradings 5 year from today
-    simulate_trading(200, "X", me, start_dttm=five_years_ago, end_dttm=now)
-    # Some tradings 1 year from today
-    simulate_trading(200, "X", me, start_dttm=a_year_ago, end_dttm=now)
-    # Some tradings 1 month from today
-    simulate_trading(200, "X", me, start_dttm=month_ago, end_dttm=now)
-    # Some tradings 24 hours ago
-    simulate_trading(200, "X", me, start_dttm=day_ago, end_dttm=now)
-    rtime = time.time() - start 
-    print(f"Finished in {rtime:.2f} seconds")
+    for symbol in ["FB", "GOOGL", "AAPL", "MSFT", "NTLX", "TSLA", "AMZN"]:
+        print(f"Simulating trades for {symbol}")
+        start = time.time()
+        for dial_back in [dt.timedelta(days=d) for d in (1, 30, 365, 365*5)]:
+            now = dt.datetime.utcnow()
+            start_dttm = now - dial_back
+            print(f"Simulating 200 trades between {start_dttm} and {now}")
+            simulate_trading(200, symbol, me, start_dttm, end_dttm=now)
+            rtime = time.time() - start 
+        print(f"Finished in {rtime:.2f} seconds")
 
     
