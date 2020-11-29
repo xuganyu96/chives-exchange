@@ -12,6 +12,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from chives.models.models import Base, Order, Transaction, Asset, User, Company
 
 
+# I am not adding file handler because at deployment, I will use an orchestrator 
+# to log console output to a file
 logger = logging.getLogger("chives.matchingengine")
 logger.setLevel(logging.DEBUG)
 chandle = logging.StreamHandler()
