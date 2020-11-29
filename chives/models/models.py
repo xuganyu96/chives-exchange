@@ -29,12 +29,15 @@ class User(UserMixin, Base):
         cascade="all, delete",
         passive_deletes=True)
     companies = relationship(
-        "Company", back_populates="owner", 
+        "Company", back_populates="founder", 
         cascade="all, delete",
         passive_deletes=True)
 
     def __str__(self):
-        return f"<User user_id = {user_id} username={username}>"
+        return f"<User user_id={self.user_id}, username={self.username}>"
+
+    def __repr__(self):
+        return self.__str__()
     
     def get_id(self):
         return self.user_id
@@ -49,6 +52,17 @@ class Asset(Base):
     asset_amount = Column(Float, nullable=False)
 
     owner = relationship("User", back_populates="assets")
+
+    def __str__(self):
+        attr_list = ", ".join([
+            f"owner_id={self.owner_id}",
+            f"symbol={self.asset_symbol}",
+            f"amount={self.asset_amount}",
+        ])
+        return f"<User {attr_list}>"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Company(Base):
@@ -67,7 +81,19 @@ class Company(Base):
     market_price = Column(Float, nullable=False)
     create_dttm = Column(DateTime, default=dt.datetime.utcnow)
 
-    owner = relationship("User", back_populates="companies")
+    founder = relationship("User", back_populates="companies")
+
+    def __str__(self):
+        attr_list = ", ".join([
+            f"symbol={self.asset_symbol}",
+            f"name={self.name}",
+            f"founder_id={self.founder_id}",
+            f"create_dttm={self.create_dttm}",
+        ])
+        return f"<User {attr_list}>"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Order(Base):

@@ -150,7 +150,7 @@ def view_company(company_symbol):
             error_msg=f"Company {company_symbol} does not exist"))
     else:
         company.create_date_display = company.create_dttm.strftime("%Y-%m-%d")
-        company.founder_name = db.query(User).get(company.founder_id).username
+        company.founder_name = company.founder.username
         return render_template("exchange/view_company.html", 
             company=company, title=f"Company: {company_symbol}")
 
