@@ -51,7 +51,7 @@ def stock_chart_data():
     elif zoom == "month":
         cutoff -= dt.timedelta(days=30)
         agg_length = dt.timedelta(days=0.5)
-        scale_unit = "week"
+        scale_unit = "day"
     elif zoom == "year":
         cutoff -= dt.timedelta(days=365)
         agg_length = dt.timedelta(days=1)
@@ -59,7 +59,7 @@ def stock_chart_data():
     else:
         cutoff -= dt.timedelta(days=10*365)
         agg_length = dt.timedelta(days=7)
-        scale_unit = "quarter"
+        scale_unit = "year"
     tfilter = tfilter & (Transaction.transact_dttm >= cutoff)
 
     sort_key = Transaction.transact_dttm.asc()
@@ -69,7 +69,7 @@ def stock_chart_data():
     df = pd.read_sql(query.statement, db.bind)[['transact_dttm', 'price']]
     agg_data_points = aggregate_stock_chart(df, zoom)
     agg_data_points_dict = [{
-        "t": dp.t,
+        "t": dp.t * 1000,
         "o": dp.o,
         "h": dp.h,
         "l": dp.l,
@@ -81,29 +81,23 @@ def stock_chart_data():
     price_std = 0 if pd.isna(df['price'].std()) else df['price'].std()
     
     data = {
-        # "labels": [t.transact_dttm.isoformat() for t in transactions],
+        "labels": [],
         "datasets": [{
             "label": "market price",
-            "data": agg_data_points_dict,
-            "fill": False,
-            "borderColor": "#1a73e8",
-            "borderWidth": 1,
-            "lineTension": 0
+            "data": agg_data_points_dict
         }]
     }
     options = {
         "scales": {
-            "xAxes": [{
+            "x": {
                 "type": 'time',
                 "distribution": 'linear',
                 "time": {"unit": scale_unit}
-            }],
-            "yAxes": [{
-                "ticks": {
-                    "suggestedMax": max_price + 0.7 * price_std,
-                    "suggestedMin": max(0, min_price - 0.7 * price_std)
-                }
-            }]
+            },
+            "y": {
+                "suggestedMax": max_price + 0.7 * price_std,
+                "suggestedMin": max(0, min_price - 0.7 * price_std)
+            }
         }
     }
     return jsonify({"data": data, "options": options})
@@ -140,13 +134,13 @@ def aggregate_stock_chart(df: pd.DataFrame,
     output = []
     for idx in df['bucket_idx'].unique():
         part = df.loc[df['bucket_idx'] == idx]
-        open = part.sort_values('transact_dttm').head(1)['price'].values[0]
-        close = part.sort_values('transact_dttm').tail(1)['price'].values[0]
-        high = part['price'].max()
-        low = part['price'].min()
-        dttm = global_agg_start + idx * agg_tspan
+        open = round(part.sort_values('transact_dttm').head(1)['price'].values[0], 2)
+        close = round(part.sort_values('transact_dttm').tail(1)['price'].values[0], 2)
+        high = round(part['price'].max(), 2)
+        low = round(part['price'].min(), 2)
+        ts = (global_agg_start + idx * agg_tspan).timestamp()
         output.append(CandleStickDataPoint(
-            t=dttm, o=open, h=high, l=low, c=close
+            t=ts, o=open, h=high, l=low, c=close
         ))
     
     return output
