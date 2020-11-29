@@ -1,4 +1,7 @@
+from collections import namedtuple
 import datetime as dt
+from math import floor
+import typing as ty
 
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
@@ -6,6 +9,11 @@ import pandas as pd
 
 from chives.db import get_db
 from chives.models.models import Company, Transaction
+
+CandleStickDataPoint = namedtuple(
+    # Respectively: dttm, open, high, low, close
+    "CandleStickDataPoint", ["t", "o", "h", "l", "c"])
+UNIX_START = dt.datetime(1970, 1, 1, 0, 0, 0)
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -59,23 +67,24 @@ def stock_chart_data():
 
     # Convert the set of transactions into a 2 column dataframe: price vs dttm
     df = pd.read_sql(query.statement, db.bind)[['transact_dttm', 'price']]
-    df['td_from_min'] = df['transact_dttm'] - df['transact_dttm'].min()
-    df['bucket_idx'] = (df['td_from_min'] / agg_length).astype(int)
+    agg_data_points = aggregate_stock_chart(df, zoom)
+    agg_data_points_dict = [{
+        "t": dp.t,
+        "o": dp.o,
+        "h": dp.h,
+        "l": dp.l,
+        "c": dp.c,
+        "y": dp.c
+    } for dp in agg_data_points]
     max_price = 0 if pd.isna(df['price'].max()) else df['price'].max()
     min_price = 0 if pd.isna(df['price'].min()) else df['price'].min()
     price_std = 0 if pd.isna(df['price'].std()) else df['price'].std()
-    dttm_price_pair = []
-    for bucket in df['bucket_idx'].unique():
-        partition = df.loc[df['bucket_idx'] == bucket]
-        dttm_label = df['transact_dttm'].min() + bucket * agg_length
-        price = partition.sort_values('transact_dttm')['price'].unique()[0]
-        dttm_price_pair.append({'t': dttm_label, 'y': price})
     
     data = {
         # "labels": [t.transact_dttm.isoformat() for t in transactions],
         "datasets": [{
             "label": "market price",
-            "data": dttm_price_pair,
+            "data": agg_data_points_dict,
             "fill": False,
             "borderColor": "#1a73e8",
             "borderWidth": 1,
@@ -98,3 +107,47 @@ def stock_chart_data():
         }
     }
     return jsonify({"data": data, "options": options})
+
+
+def aggregate_stock_chart(df: pd.DataFrame, 
+    zoom: str = "day") -> ty.List[ty.Dict]:
+    """Given a DataFrame that contains two non-null columns "transact_dttm" and 
+    "price", return a list of CandleStickDataPoint instances that represent the 
+    aggregated trade data of the time interval that starts with dp.T and ends 
+    with the next dp.T
+
+    :param df: [description]
+    :type df: pd.DataFrame
+    :param zoom: [description], defaults to "day"
+    :type zoom: str, optional
+    """
+    assert zoom in ["day", "month", "year", "max"]
+    if zoom == "month":
+        agg_tspan = dt.timedelta(hours=6)
+    elif zoom == "year":
+        agg_tspan = dt.timedelta(days=1)
+    elif zoom == "max":
+        agg_tspan = dt.timedelta(days=7)
+    else:
+        agg_tspan = dt.timedelta(minutes=10)
+    
+    global_min_transact_ts = df['transact_dttm'].min()
+    global_agg_start = (global_min_transact_ts - UNIX_START) // agg_tspan \
+        * agg_tspan + UNIX_START
+    df['bucket_idx'] = (df['transact_dttm'] - global_agg_start) / agg_tspan
+    df['bucket_idx'] = df['bucket_idx'].apply(floor)
+
+    output = []
+    for idx in df['bucket_idx'].unique():
+        part = df.loc[df['bucket_idx'] == idx]
+        open = part.sort_values('transact_dttm').head(1)['price'].values[0]
+        close = part.sort_values('transact_dttm').tail(1)['price'].values[0]
+        high = part['price'].max()
+        low = part['price'].min()
+        dttm = global_agg_start + idx * agg_tspan
+        output.append(CandleStickDataPoint(
+            t=dttm, o=open, h=high, l=low, c=close
+        ))
+    
+    return output
+    
