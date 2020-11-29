@@ -32,9 +32,6 @@
       <form id="search-bar-form" style="flex-grow: 1;">
         <div class="input-field" style="display: flex; align-items: center; flex-grow: 1; border: 1px solid #cccccc; border-radius: 10px; padding: 0px 30px; height: 54px; border-radius: 27px;"> <!--Search bar-->
           <input type="text" style="border: 0px;" placeholder="Search security symbol" class="autocomplete" id='autocomplete-search-input'>
-          <button class="waves-effect btn-flat" style="height: 40px; width: 40px; border-radius: 20px; padding: 0px; display: flex; align-items: center; justify-content: center;" type="submit">
-            <i class="material-icons" style="color: #1a73e8; font-size: 2rem;">search</i>
-          </button>
         </div>
       </form>
       <div style="display: flex; align-items: center; flex-grow: 1; justify-content: flex-end; height: 100%;"> <!--Profile cluster-->
@@ -45,7 +42,7 @@
           <li class="collection-item" style="display: flex; align-items: center; justify-content: center; padding: 0px;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.recent_orders') }}" style="width: 10rem; display: flex; align-items: center; justify-content: center;"><span style="color: black;">Recent orders</span></a></li>
           <li class="collection-item" style="display: flex; align-items: center; justify-content: center; padding: 0px;"><a class="waves-effect btn-flat" href="{{ url_for('exchange.recent_transactions') }}" style="width: 10rem; display: flex; align-items: center; justify-content: center;"><span style="color: black;">Recent trades</span></a></li>
         </ul>
-        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;" href="{{ url_for('auth.logout') }}"><i class="material-icons" style="font-size: 2rem">exit_to_app</i></a>
+        <a class="waves-effect btn-flat" style="margin: 0px 10px; height: 70%; display: flex; justify-content: center; align-items: center;" href="{{ url_for('auth.logout') }}">Log out</a>
       </div>
     </div>
     {% block content %}
