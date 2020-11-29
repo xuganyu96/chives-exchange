@@ -168,7 +168,15 @@ class Order(Base):
         return cls(**json.loads(jstring))
 
     def __repr__(self):
-        return f"<Order(id={self.order_id}, symbol={self.security_symbol}, side={self.side})>"
+        attr_list = ", ".join([
+            f"id={self.order_id}",
+            f"symbol={self.security_symbol}",
+            f"side={self.side}",
+            f"size={self.size}",
+            f"price={self.price}",
+            f"owner_id={self.owner_id}",
+        ])
+        return f"<Order({attr_list})>"
 
     def __str__(self):
         return self.__repr__()
@@ -192,7 +200,15 @@ class Transaction(Base):
     transact_dttm = Column(DateTime, nullable=False, default=dt.datetime.utcnow)
 
     def __repr__(self):
-        return f"<Transaction(id={self.transaction_id} time={self.transact_dttm})>"
+        attr_list = ", ".join([
+            f"id={self.transaction_id}",
+            f"time={self.transact_dttm}",
+            f"price={self.price}",
+            f"size={self.size}",
+            f"ask_id={self.ask_id}",
+            f"bid_id={self.bid_id}",
+        ])
+        return f"<Transaction({attr_list})>"
 
     def __str__(self):
         return self.__repr__()
