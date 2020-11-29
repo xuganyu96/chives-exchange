@@ -9,8 +9,22 @@
     --mdc-wave-primary: #5894e4A6;
 }
 
+/* noto-sans-regular - latin */
+@font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: url('fonts/noto-sans-v11-latin-regular.eot'); /* IE9 Compat Modes */
+    src: local(''),
+         url('fonts/noto-sans-v11-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+         url('fonts/noto-sans-v11-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+         url('fonts/noto-sans-v11-latin-regular.woff') format('woff'), /* Modern Browsers */
+         url('fonts/noto-sans-v11-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+         url('fonts/noto-sans-v11-latin-regular.svg#NotoSans') format('svg'); /* Legacy iOS */
+  }
+
 body {
-    font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;
+    font-family: 'Noto Sans',arial,sans-serif;
 }
 
 h1 {
@@ -48,7 +62,7 @@ a {
     text-decoration: none;
     font-weight: bold;
     letter-spacing: 0.03em;
-    font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;
+    font-family: 'Noto Sans',arial,sans-serif;
     font-size: 14px;
     text-transform: none !important;
 }
