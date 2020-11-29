@@ -1,3 +1,5 @@
+import logging
+
 from babel.numbers import format_number
 from flask import (
     Blueprint, flash, g as flask_g, redirect, render_template, request, 
@@ -11,6 +13,14 @@ from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm, StartCompanyForm
 from chives.models.models import Order, Asset, Company, Transaction, User
 
+logger = logging.getLogger("chives.webserver")
+logger.setLevel(logging.DEBUG)
+chandle = logging.StreamHandler()
+chandle.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+chandle.setFormatter(formatter)
+logger.addHandler(chandle)
 bp = Blueprint("exchange", __name__, url_prefix="/exchange")
 
 @bp.route("/dashboard", methods=("GET",))
@@ -69,15 +79,19 @@ def submit_order():
             if user_existing_asset is None or user_existing_asset.asset_amount < new_order.size:
                 return redirect(url_for("exchange.error", error_msg="Insufficient assets"))
             else:
+                logger.info(f"Subtracting {new_order.size} shares of {new_order.security_symbol} from {current_user}")
                 user_existing_asset.asset_amount -= new_order.size
         if new_order.price is None:
-            print("Market order")
+            logger.info(f"Marking market order {new_order}")
             new_order.immediate_or_cancel = True
         db = get_db()
         db.add(new_order)
         db.commit()
+        logger.info(f"{new_order} committed to database")
+
         ch.basic_publish(
                 exchange='', routing_key='incoming_order', body=new_order.json)
+        logger.info(f"{new_order} submitted to order queue")
 
         return redirect(url_for("exchange.dashboard"))
     return render_template(
@@ -168,6 +182,8 @@ def start_company():
             asset_amount=form.size.data)
         db.add(founder_stocks)
         db.commit()
+        logger.info(f"{new_company} committed to database")
+        logger.info(f"{founder_stocks} committed to database")
 
         return redirect(url_for("exchange.dashboard"))
     return render_template(

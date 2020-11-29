@@ -1,10 +1,11 @@
 import functools 
+import logging
 
 from flask import (
     Blueprint, flash, g as flask_g, redirect, render_template, request, 
     session as flask_session, url_for
 )
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash 
 
 from chives.webserver import login_manager
@@ -12,13 +13,27 @@ from chives.db import get_db as get_db_session
 from chives.forms import RegistrationForm, LoginForm
 from chives.models.models import User, Asset
 
+
+# I am not adding file handler because at deployment, I will use an orchestrator 
+# to log console output to a file
+logger = logging.getLogger("chives.webserver")
+logger.setLevel(logging.DEBUG)
+chandle = logging.StreamHandler()
+chandle.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+chandle.setFormatter(formatter)
+logger.addHandler(chandle)
+
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @login_manager.user_loader 
 def load_user(user_id):
     db_session = get_db_session()
     if user_id is not None:
-        return db_session.query(User).get(user_id)
+        loaded_user = db_session.query(User).get(user_id)
+        logger.info(f"Loading {loaded_user}")
+        return loaded_user
     return None
 
 
@@ -42,13 +57,15 @@ def register():
             db_session.add(new_user)
             db_session.commit()
             # Each user receives $10,000.00 of cash upon registration
+            initial_cash_amount = 10000
             initial_cash = Asset(
                 owner_id=new_user.user_id,
                 asset_symbol="_CASH",
-                asset_amount=10000.00
+                asset_amount=initial_cash_amount
             )
             db_session.add(initial_cash)
             db_session.commit()
+            logger.info(f"{new_user} received ${initial_cash_amount:.2f}")
 
             return redirect(url_for("auth.login"))
 
