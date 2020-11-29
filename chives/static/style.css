@@ -48,7 +48,7 @@ a {
     text-decoration: none;
     font-weight: bold;
     letter-spacing: 0.03em;
-    font-family: Roboto;
+    font-family: 'Google Sans','Noto Sans Myanmar UI',arial,sans-serif;
     font-size: 14px;
     text-transform: none !important;
 }
