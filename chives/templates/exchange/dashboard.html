@@ -17,7 +17,9 @@
       {% for stock in stocks %}
       <div class="card z-depth-2" style="flex: 0 0 14rem; margin-right: 2rem; border: 1px solid #bbbbbb; border-radius: 10px;">
         <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <span class="card-title">{{ stock.asset_symbol }}</span>
+          <a href="{{ url_for('exchange.view_company', company_symbol=stock.asset_symbol ) }}">
+            <span class="card-title">{{ stock.asset_symbol }}</span>
+          </a>
           <span>{{ stock.asset_amount_display }} shares</span>
         </div>
         <div class="card-action" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">

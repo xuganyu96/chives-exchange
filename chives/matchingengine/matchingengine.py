@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import os
 import sys
 import typing as ty
@@ -11,7 +12,14 @@ from sqlalchemy.orm import sessionmaker, Session
 from chives.models.models import Base, Order, Transaction, Asset, User, Company
 
 
-_DEFAULT_OB_ENGINE = create_engine("sqlite:///:memory:", echo=False)
+# I am not adding file handler because at deployment, I will use an orchestrator 
+# to log console output to a file
+logger = logging.getLogger("chives.matchingengine")
+chandle = logging.StreamHandler()
+formatter = logging.Formatter(
+    '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+chandle.setFormatter(formatter)
+logger.addHandler(chandle)
 
 
 class OrderNotFoundError(KeyError):
@@ -157,6 +165,8 @@ class MatchingEngine:
                 and (transaction_size < candidate.remaining_size):
                     # If the candidate is all-or-none and the transaction 
                     # cannot fulfill it entirely
+                    logger.debug(
+                        f"AON resting order {candidate} rejected {incoming}")
                     return None
             else:
                 # the transaction size will always be the candidate's 
@@ -181,6 +191,7 @@ class MatchingEngine:
         :param incoming: the incoming order
         :type incoming: Order
         """
+        logger.info("Starting new heartbeat")
         # The canonical way of receiving orders is from order submissions 
         # from webserver to the order queue, and since the webserver already 
         # commits the order into the main database, there should not be the 
@@ -190,6 +201,7 @@ class MatchingEngine:
         # whether the incoming order is in the main database or not.
         if (incoming.order_id is None) \
             or (self.session.query(Order).get(incoming.order_id) is None):
+            logger.debug(f"Received un-committed incoming order {incoming}")
             self.session.add(incoming)
             self.session.commit()
 
@@ -286,7 +298,7 @@ class MatchingEngine:
                      match_result.incoming_remain.security_symbol)
                 )
                 refund_size = match_result.incoming_remain.size
-                print(f"Refunding {refund_size} shares")
+                logger.debug(f"Refunding {refund_size} shares")
                 source_asset.asset_amount += refund_size
                 self.session.commit()
     
@@ -301,6 +313,7 @@ class MatchingEngine:
         mr = MatchResult()
         incoming.remaining_size = incoming.size 
         candidates: ty.List[Order] = self.ob.get_candidates(incoming)
+        logger.debug(f"Found {len(candidates)} resting orders as candidates")
 
         for candidate in candidates:
             candidate.remaining_size = candidate.size
@@ -313,6 +326,7 @@ class MatchingEngine:
                 # then transaction is None
                 transaction = self.propose_trade(incoming, candidate)
                 if transaction is not None:
+                    logger.debug(f"{incoming} matches {candidate}: {transaction}")
                     incoming.remaining_size -= transaction.size 
                     candidate.remaining_size -= transaction.size 
                     mr.transactions.append(transaction)
@@ -325,16 +339,20 @@ class MatchingEngine:
         # After all matchings are complete
         mr.incoming = incoming
         if incoming.remaining_size == incoming.size:
+            logger.debug(f"No trade proposed; incoming order's remain is itself")
             mr.incoming_remain = mr.incoming
             mr.incoming_remain.active = mr.incoming.active = True
         elif incoming.remaining_size > 0:
+            logger.debug(f"Incoming order partially fulfilled; creating suborder")
             mr.incoming_remain = incoming.create_suborder()
             mr.incoming_remain.active = True
         else:
+            logger.debug(f"Incoming order completely fulfilled")
             mr.incoming_remain = None
 
-        # Respect the AON policy
+        # Respect the AON and IOC policy
         if incoming.all_or_none and incoming.remaining_size > 0:
+            logger.debug(f"Incoming order is all-or-none and less than completely fulfilled")
             mr.incoming_remain = mr.incoming
             mr.incoming_remain.active = True
             mr.transactions = []
@@ -344,6 +362,7 @@ class MatchingEngine:
             mr.deactivated = []
             mr.reactivated = None
         if incoming.immediate_or_cancel and (mr.incoming_remain is not None):
+            logger.debug(f"Incoming order is immediate-or-cancel and has non-trivial remains")
             mr.incoming_remain.cancelled_dttm = dt.datetime.utcnow()
             mr.incoming_remain.active = False
         
@@ -358,7 +377,7 @@ def main(queue_host: str, sql_engine: SQLEngine):
     me = MatchingEngine(sql_engine)
 
     def msg_callback(ch, method, properties, body):
-        print(" [x] Received %r" % body)
+        logger.info("Received %r" % body)
         me.heartbeat(Order.from_json(body))
     
     ch.basic_consume(queue="incoming_order", 
