@@ -132,10 +132,16 @@ def aggregate_stock_chart(df: pd.DataFrame,
     df['bucket_idx'] = df['bucket_idx'].apply(floor)
 
     output = []
+    # an interval's close should be next interval's open
+    prior_close = None
     for idx in df['bucket_idx'].unique():
         part = df.loc[df['bucket_idx'] == idx]
-        open = round(part.sort_values('transact_dttm').head(1)['price'].values[0], 2)
-        close = round(part.sort_values('transact_dttm').tail(1)['price'].values[0], 2)
+        # If there is a prior close, then open is set to prior close
+        open = prior_close if prior_close else round(
+            part.sort_values('transact_dttm').head(1)['price'].values[0], 2)
+        # Update prior close
+        prior_close = close = round(
+            part.sort_values('transact_dttm').tail(1)['price'].values[0], 2)
         high = round(part['price'].max(), 2)
         low = round(part['price'].min(), 2)
         ts = (global_agg_start + idx * agg_tspan).timestamp()
