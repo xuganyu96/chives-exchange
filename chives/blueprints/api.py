@@ -115,6 +115,10 @@ def aggregate_stock_chart(df: pd.DataFrame,
     :param zoom: [description], defaults to "day"
     :type zoom: str, optional
     """
+    if df.shape[0] == 0:
+        # If there is no transaction, then return an empty list
+        return []
+    
     assert zoom in ["day", "month", "year", "max"]
     if zoom == "month":
         agg_tspan = dt.timedelta(hours=6)
