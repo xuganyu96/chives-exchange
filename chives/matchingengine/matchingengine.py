@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 
-from chives.models.models import Base, Order, Transaction, Asset, User, Company
+from chives.models import Base, Order, Transaction, Asset, User, Company
 
 
 # I am not adding file handler because at deployment, I will use an orchestrator 

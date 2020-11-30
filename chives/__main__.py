@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 
 from chives.cli import parser as chives_parser
-from chives.matchingengine.matchingengine import main as me_main
+from chives.matchingengine import main as me_main
 from chives.models import Base
 from chives.webserver import create_app
 

@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 import pandas as pd
 
 from chives.db import get_db
-from chives.models.models import Company, Transaction
+from chives.models import Company, Transaction
 
 CandleStickDataPoint = namedtuple(
     # Respectively: dttm, open, high, low, close

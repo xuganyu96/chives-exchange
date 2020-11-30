@@ -4,8 +4,7 @@ import json
 from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, DateTime, ForeignKey)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, scoped_session
+from sqlalchemy.orm import relationship
 
 from chives.db import Base
 
