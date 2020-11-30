@@ -84,7 +84,7 @@ class Company(Base):
 
     def __str__(self):
         attr_list = ", ".join([
-            f"symbol={self.asset_symbol}",
+            f"symbol={self.symbol}",
             f"name={self.name}",
             f"founder_id={self.founder_id}",
             f"create_dttm={self.create_dttm}",
