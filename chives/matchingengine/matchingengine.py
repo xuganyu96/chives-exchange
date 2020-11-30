@@ -15,7 +15,9 @@ from chives.models import Base, Order, Transaction, Asset, User, Company
 # I am not adding file handler because at deployment, I will use an orchestrator 
 # to log console output to a file
 logger = logging.getLogger("chives.matchingengine")
+logger.setLevel(logging.INFO)
 chandle = logging.StreamHandler()
+chandle.setLevel(logging.INFO)
 formatter = logging.Formatter(
     '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
 chandle.setFormatter(formatter)
@@ -301,6 +303,8 @@ class MatchingEngine:
                 logger.debug(f"Refunding {refund_size} shares")
                 source_asset.asset_amount += refund_size
                 self.session.commit()
+        
+        logger.info("Heartbeat finished")
     
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
@@ -370,11 +374,15 @@ class MatchingEngine:
 
 
 def main(queue_host: str, sql_engine: SQLEngine):
+    logger.info("Starting matching engine")
+
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
     ch = conn.channel()
     ch.queue_declare(queue="incoming_order")
+    logger.info("Connected to RabbitMQ")
     
     me = MatchingEngine(sql_engine)
+    logger.info("Matching engine initialized")
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
@@ -383,4 +391,5 @@ def main(queue_host: str, sql_engine: SQLEngine):
     ch.basic_consume(queue="incoming_order", 
                      on_message_callback=msg_callback,
                      auto_ack=True)
+    logger.info("Listening for incoming order")
     ch.start_consuming()            
