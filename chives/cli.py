@@ -1,5 +1,5 @@
 import argparse 
-from chives.db import SQLALCHEMY_URI
+from chives.db import SQLALCHEMY_URI, DEFAULT_SQLALCHEMY_URI
 
 parser = argparse.ArgumentParser(prog="chives")
 subparsers = parser.add_subparsers(help="subcommand help", required=True,
@@ -18,19 +18,19 @@ parser_start_engine.add_argument("-q", "--queue-host",
     dest="queue_host",
     default="localhost")
 parser_start_engine.add_argument("-s", "--sql-uri",
-    help=f"Database URI; defaults to {SQLALCHEMY_URI}",
+    help=f"Database URI; defaults to {DEFAULT_SQLALCHEMY_URI}",
     dest="sql_uri",
-    default=f"{SQLALCHEMY_URI}")
+    default=f"{DEFAULT_SQLALCHEMY_URI}")
 
 # Create the parser for initdb command
 parser_initdb = subparsers.add_parser('initdb', 
     help="Initialize the database")
-parser_initdb.add_argument("-d", "--database",
-    help=f"Database URI; defaults to {SQLALCHEMY_URI}",
+parser_initdb.add_argument("-s", "--sql-uri",
+    help=f"Database URI; defaults to {DEFAULT_SQLALCHEMY_URI}",
     dest="sql_uri",
-    default=f"{SQLALCHEMY_URI}")
+    default=f"{DEFAULT_SQLALCHEMY_URI}")
 
-# Create the parser for initdb command
+# Create the parser for webserver command
 parser_webserver = subparsers.add_parser('webserver', 
     help="Initialize the database")
 parser_webserver.add_argument("-p", "--port",
@@ -41,3 +41,7 @@ parser_webserver.add_argument("-d", "--debug",
     help="If used, will make the Flask app run in debug mode",
     dest="debug",
     action="store_true")
+parser_webserver.add_argument("-s", "--sql-uri",
+    help=f"Database URI; defaults to {DEFAULT_SQLALCHEMY_URI}",
+    dest="sql_uri", 
+    default=DEFAULT_SQLALCHEMY_URI)

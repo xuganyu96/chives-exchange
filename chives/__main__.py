@@ -16,7 +16,12 @@ def main():
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
         Base.metadata.create_all(sql_engine)
     if args.subcommand == "webserver":
-        app = create_app()
+        # Obtain the agruments that form the application configuration, then 
+        # pass the configuration into the app factory before running the app
+        sql_uri = args.sql_uri
+        config={"DATABASE_URI": sql_uri}
+        
+        app = create_app(config)
         app.run(port=args.webserver_port, debug=args.debug)
 
 
