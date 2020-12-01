@@ -238,7 +238,9 @@ def benchmark_mysql(sql_uri: str = DEFAULT_MYSQL_URI,
     print("All orders submitted")
     
     # Wait until there are as many transactions as there are rounds
-    # TODO: The transaction count remains at 0
+    # TODO: The transaction count remains at 0 when running benchmark_mysql(), 
+    # but if I do keyboard interrupt and create a new engine, a new session, 
+    # the session will query correctly.
     main_session.rollback()
     while main_session.query(Transaction).count() < n_rounds:
         time.sleep(1)
