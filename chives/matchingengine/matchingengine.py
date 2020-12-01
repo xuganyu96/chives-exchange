@@ -193,7 +193,7 @@ class MatchingEngine:
         :param incoming: the incoming order
         :type incoming: Order
         """
-        logger.info("Starting new heartbeat")
+        logger.debug("Starting new heartbeat")
         # The canonical way of receiving orders is from order submissions 
         # from webserver to the order queue, and since the webserver already 
         # commits the order into the main database, there should not be the 
@@ -304,7 +304,7 @@ class MatchingEngine:
                 source_asset.asset_amount += refund_size
                 self.session.commit()
         
-        logger.info("Heartbeat finished")
+        logger.debug("Heartbeat finished")
     
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
