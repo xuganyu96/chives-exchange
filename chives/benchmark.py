@@ -239,12 +239,8 @@ def benchmark_mysql(sql_uri: str = DEFAULT_MYSQL_URI,
     
     # Wait until there are as many transactions as there are rounds
     # TODO: The transaction count remains at 0
-    conn = sql_engine.connect() 
-    count_query = "SELECT COUNT(*) FROM transactions;"
-    n_tr = conn.execute(count_query).fetchone().values()[0]
-    while n_tr < n_rounds:
-        n_tr = conn.execute(count_query).fetchone().values()[0]
-        print(f"{n_tr} transactions found")
+    main_session.rollback()
+    while main_session.query(Transaction).count() < n_rounds:
         time.sleep(1)
     # Check the transaction size and price, then report result
     for i in range(n_rounds):
@@ -259,5 +255,4 @@ def benchmark_mysql(sql_uri: str = DEFAULT_MYSQL_URI,
 
     # Teardown
     mq.close()
-    conn.close()
     print("Benchmark finished")
