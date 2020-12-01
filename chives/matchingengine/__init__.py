@@ -1,2 +1,2 @@
 from chives.matchingengine.matchingengine import (
-    OrderBook, MatchResult, MatchingEngine, main)
+    OrderBook, MatchResult, MatchingEngine, start_engine)

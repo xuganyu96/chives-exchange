@@ -373,7 +373,7 @@ class MatchingEngine:
         return mr
 
 
-def main(queue_host: str, sql_engine: SQLEngine):
+def start_engine(queue_host: str, sql_engine: SQLEngine):
     logger.info("Starting matching engine")
 
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
