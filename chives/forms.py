@@ -6,7 +6,7 @@ from wtforms.validators import (InputRequired, Length, EqualTo, NumberRange,
     Optional, Regexp)
 
 from chives.db import get_db
-from chives.models.models import Company
+from chives.models import Company
 
 class RegistrationForm(Form):
     username = StringField(

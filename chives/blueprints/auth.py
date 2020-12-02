@@ -9,9 +9,9 @@ from flask_login import login_user, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash 
 
 from chives.webserver import login_manager
-from chives.db import get_db as get_db_session
+from chives.db import get_db
 from chives.forms import RegistrationForm, LoginForm
-from chives.models.models import User, Asset
+from chives.models import User, Asset
 
 
 # I am not adding file handler because at deployment, I will use an orchestrator 
@@ -29,7 +29,7 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @login_manager.user_loader 
 def load_user(user_id):
-    db_session = get_db_session()
+    db_session = get_db()
     if user_id is not None:
         loaded_user = db_session.query(User).get(user_id)
         logger.info(f"Loading {loaded_user}")
@@ -46,7 +46,7 @@ def unauthorized():
 def register():
     form = RegistrationForm(request.form)
     if request.method == "POST" and form.validate_on_submit():
-        db_session = get_db_session()
+        db_session = get_db()
         if db_session.query(User).filter(
             User.username==form.username.data).first() is not None:
             form.username.errors.append("Username already taken!")
@@ -76,7 +76,7 @@ def register():
 def login():
     form = LoginForm(request.form)
     if request.method == "POST" and form.validate_on_submit():
-        db_session = get_db_session()
+        db_session = get_db()
         user = db_session.query(
             User).filter(User.username==form.username.data).first()
         if (user is not None) and check_password_hash(user.password_hash, 

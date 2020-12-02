@@ -11,7 +11,7 @@ from pika.exceptions import AMQPConnectionError
 
 from chives.db import get_db, get_mq
 from chives.forms import OrderSubmitForm, StartCompanyForm
-from chives.models.models import Order, Asset, Company, Transaction, User
+from chives.models import Order, Asset, Company, Transaction, User
 
 logger = logging.getLogger("chives.webserver")
 logger.setLevel(logging.DEBUG)

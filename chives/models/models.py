@@ -4,8 +4,7 @@ import json
 from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, DateTime, ForeignKey)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, scoped_session
+from sqlalchemy.orm import relationship
 
 from chives.db import Base
 
@@ -85,7 +84,7 @@ class Company(Base):
 
     def __str__(self):
         attr_list = ", ".join([
-            f"symbol={self.asset_symbol}",
+            f"symbol={self.symbol}",
             f"name={self.name}",
             f"founder_id={self.founder_id}",
             f"create_dttm={self.create_dttm}",
