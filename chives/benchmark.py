@@ -1,6 +1,7 @@
+import datetime as dt
+from collections import namedtuple
 import os 
 import random
-import datetime as dt
 import time
 
 import pika
@@ -13,6 +14,7 @@ from chives.models import Base, User, Company, Asset, Order, Transaction
 
 DEFAULT_SQLITE_PATH = "/tmp/benchmark.chives.sqlite"
 DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
+BenchmarkResult = namedtuple("BenchmarkResult", ["run_seconds", "errors"])
 
 def remove_old_sqlite(filepath: str = DEFAULT_SQLITE_PATH):
     if os.path.isfile(filepath):
@@ -150,21 +152,26 @@ def benchmark_sqlite(n_rounds: int = 1,
     # Wait until there are as many transactions as there are rounds
     while main_session.query(Transaction).count() < n_rounds:
         time.sleep(1)
+    
     # Check the transaction size and price, then report result
+    errors = []
     for i in range(n_rounds):
         tr = main_session.query(Transaction).get(i+1)
         if tr.size != random_sizes[i]:
-            print(f"{tr} size mismatches expected size {random_sizes[i]}")
+            errors.append(
+                f"{tr} size mismatches expected size {random_sizes[i]}")
         if tr.price != random_prices[i]:
-            print(f"{tr} price mismatches expected price {random_prices[i]}")
-    print("Benchmark correctness verified")
+            errors.append(
+                f"{tr} price mismatches expected price {random_prices[i]}")
     finish_dttm = main_session.query(Transaction).get(n_rounds).transact_dttm
-    print(f"Benchmark runtime: {finish_dttm - start_dttm}")
+    run_seconds = (finish_dttm - start_dttm).total_seconds()
 
     # Teardown
     mq.close()
     remove_old_sqlite(sqlite_path)
     print("Benchmark finished")
+
+    return BenchmarkResult(run_seconds, errors)
 
 
 def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
@@ -239,23 +246,28 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
     # Use .close() to reset the connection since we are now querying results 
     # that were modified by an SQLAlchemy ORM Session in a different process
     main_session.close(); time.sleep(1)
-    print("Main session reset; waiting for 1 seconds before next query")
+    print("Waiting until all transactions are posted")
     # import pdb; pdb.set_trace()
     time.sleep(1)
     while main_session.query(Transaction).count() < n_rounds:
         main_session.close(); time.sleep(1)
     
     # Check the transaction size and price, then report result
+    errors = []
     for i in range(n_rounds):
         tr = main_session.query(Transaction).get(i+1)
         if tr.size != random_sizes[i]:
-            print(f"{tr} size mismatches expected size {random_sizes[i]}")
+            errors.append(
+                f"{tr} size mismatches expected size {random_sizes[i]}")
         if abs(tr.price - random_prices[i]) > 0.01:
-            print(f"{tr} price mismatches expected price {random_prices[i]}")
+            errors.append(
+                f"{tr} price mismatches expected price {random_prices[i]}")
     print("Benchmark correctness verified")
     finish_dttm = main_session.query(Transaction).get(n_rounds).transact_dttm
-    print(f"Benchmark runtime: {finish_dttm - start_dttm}")
+    run_seconds = (finish_dttm - start_dttm).total_seconds()
 
     # Teardown
     mq.close()
     print("Benchmark finished")
+
+    return BenchmarkResult(run_seconds, errors)
