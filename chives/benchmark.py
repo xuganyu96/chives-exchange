@@ -80,8 +80,8 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
     return session.query(Asset).get((user_id, symbol))
 
 
-def benchmark_sqlite(sqlite_path: str = DEFAULT_SQLITE_PATH, 
-                     n_rounds: int = 1):
+def benchmark_sqlite(n_rounds: int = 1,
+                     sqlite_path: str = DEFAULT_SQLITE_PATH):
     """Remove existing benchmark.chives.sqlite, create a new one, initialize
     database schema, create buyer/seller/company, then for each round, submit 
     an order into the rabbitMQ. After all rounds, wait until transaction 
