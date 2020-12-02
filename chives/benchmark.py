@@ -167,8 +167,7 @@ def benchmark_sqlite(n_rounds: int = 1,
     print("Benchmark finished")
 
 
-def benchmark_mysql(sql_uri: str = DEFAULT_MYSQL_URI, 
-                    n_rounds: int = 1):
+def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
     """Remove existing benchmark.chives.sqlite, create a new one, initialize
     database schema, create buyer/seller/company, then for each round, submit 
     an order into the rabbitMQ. After all rounds, wait until transaction 
