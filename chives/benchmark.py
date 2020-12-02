@@ -12,7 +12,7 @@ from chives.models import Base, User, Company, Asset, Order, Transaction
 
 
 DEFAULT_SQLITE_PATH = "/tmp/benchmark.chives.sqlite"
-DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3306/chives"
+DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 
 def remove_old_sqlite(filepath: str = DEFAULT_SQLITE_PATH):
     if os.path.isfile(filepath):
@@ -189,7 +189,7 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
     # Set up schemas
     sql_engine = create_engine(sql_uri)
     Base.metadata.create_all(sql_engine)
-    Session = sessionmaker(autocommit=False, autoflush=False, bind=sql_engine)
+    Session = sessionmaker(bind=sql_engine)
     main_session = Session()
 
     # Set up initial data
@@ -236,19 +236,21 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
             exchange='', routing_key='incoming_order', body=bid.json)
     print("All orders submitted")
     
-    # Wait until there are as many transactions as there are rounds
-    # TODO: The transaction count remains at 0 when running benchmark_mysql(), 
-    # but if I do keyboard interrupt and create a new engine, a new session, 
-    # the session will query correctly.
-    main_session.rollback()
+    # Use .close() to reset the connection since we are now querying results 
+    # that were modified by an SQLAlchemy ORM Session in a different process
+    main_session.close(); time.sleep(1)
+    print("Main session reset; waiting for 1 seconds before next query")
+    # import pdb; pdb.set_trace()
+    time.sleep(1)
     while main_session.query(Transaction).count() < n_rounds:
-        time.sleep(1)
+        main_session.close(); time.sleep(1)
+    
     # Check the transaction size and price, then report result
     for i in range(n_rounds):
         tr = main_session.query(Transaction).get(i+1)
         if tr.size != random_sizes[i]:
             print(f"{tr} size mismatches expected size {random_sizes[i]}")
-        if tr.price != random_prices[i]:
+        if abs(tr.price - random_prices[i]) > 0.01:
             print(f"{tr} price mismatches expected price {random_prices[i]}")
     print("Benchmark correctness verified")
     finish_dttm = main_session.query(Transaction).get(n_rounds).transact_dttm
