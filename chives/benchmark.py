@@ -83,7 +83,8 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
 
 
 def benchmark_sqlite(n_rounds: int = 1,
-                     sqlite_path: str = DEFAULT_SQLITE_PATH):
+                     sqlite_path: str = DEFAULT_SQLITE_PATH,
+                     dry_run: bool = False):
     """Remove existing benchmark.chives.sqlite, create a new one, initialize
     database schema, create buyer/seller/company, then for each round, submit 
     an order into the rabbitMQ. After all rounds, wait until transaction 
@@ -98,6 +99,9 @@ def benchmark_sqlite(n_rounds: int = 1,
     :type n_workers: int, optional
     :param n_rounds: [description], defaults to 1
     :type n_rounds: int, optional
+    :param dry_run: if set to True, stops the benchmark after all orders are 
+    submitted, then return a BenchmarkResult with 0 second runtime and error 
+    message "dry run"
     """
     # Set up database schema
     remove_old_sqlite(sqlite_path)
@@ -149,6 +153,13 @@ def benchmark_sqlite(n_rounds: int = 1,
         ch.basic_publish(
             exchange='', routing_key='incoming_order', body=bid.json)
     
+    if dry_run:
+        # Finish the benchmark without computing runtime or correctness
+        mq.close()
+        remove_old_sqlite(sqlite_path)
+        print("Benchmark finished")
+        return BenchmarkResult(0, ["Dry run"])
+    
     # Wait until there are as many transactions as there are rounds
     while main_session.query(Transaction).count() < n_rounds:
         time.sleep(1)
@@ -174,7 +185,8 @@ def benchmark_sqlite(n_rounds: int = 1,
     return BenchmarkResult(run_seconds, errors)
 
 
-def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
+def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI,
+        dry_run: bool = False):
     """Remove existing benchmark.chives.sqlite, create a new one, initialize
     database schema, create buyer/seller/company, then for each round, submit 
     an order into the rabbitMQ. After all rounds, wait until transaction 
@@ -189,6 +201,9 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
     :type n_workers: int, optional
     :param n_rounds: [description], defaults to 1
     :type n_rounds: int, optional
+    :param dry_run: if set to True, stops the benchmark after all orders are 
+    submitted, then return a BenchmarkResult with 0 second runtime and error 
+    message "dry run"
     """
     # Dropping database as a set up is tricky; I will leave it to docker run 
     # and docker stop as setup/teardown
@@ -242,6 +257,11 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI):
         ch.basic_publish(
             exchange='', routing_key='incoming_order', body=bid.json)
     print("All orders submitted")
+    if dry_run:
+        # Finish the benchmark without computing runtime or correctness
+        mq.close()
+        print("Benchmark finished")
+        return BenchmarkResult(0, ["Dry run"])
     
     # Use .close() to reset the connection since we are now querying results 
     # that were modified by an SQLAlchemy ORM Session in a different process
