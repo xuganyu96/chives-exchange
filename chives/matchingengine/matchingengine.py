@@ -2,6 +2,7 @@ import datetime as dt
 import logging
 import os
 import sys
+import time
 import typing as ty
 
 import pika
@@ -194,6 +195,7 @@ class MatchingEngine:
         :type incoming: Order
         """
         logger.debug("Starting new heartbeat")
+        self.session.close()
         # The canonical way of receiving orders is from order submissions 
         # from webserver to the order queue, and since the webserver already 
         # commits the order into the main database, there should not be the 
