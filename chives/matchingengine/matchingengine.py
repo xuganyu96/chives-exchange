@@ -373,7 +373,20 @@ class MatchingEngine:
         return mr
 
 
-def start_engine(queue_host: str, sql_engine: SQLEngine):
+def start_engine(queue_host: str, sql_engine: SQLEngine, 
+    dry_run: bool = False):
+    """Initialize a RabbitMQ connection and a matching engine instance, then 
+    start listening in for incoming order
+
+    :param queue_host: hostname of the RabbitMQ server
+    :type queue_host: str
+    :param sql_engine: an SQLAlchemy engine that the matching engine uses to 
+    construct the ORM session
+    :type sql_engine: SQLEngine
+    :param dry_run: if True, the matching engine will not heartbeat upon 
+    receiving the incoming message, defaults to False
+    :type dry_run: bool, optional
+    """
     logger.info("Starting matching engine")
 
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
@@ -386,7 +399,8 @@ def start_engine(queue_host: str, sql_engine: SQLEngine):
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
-        me.heartbeat(Order.from_json(body))
+        if not dry_run:
+            me.heartbeat(Order.from_json(body))
     
     ch.basic_consume(queue="incoming_order", 
                      on_message_callback=msg_callback,
