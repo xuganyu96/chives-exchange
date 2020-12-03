@@ -146,7 +146,8 @@ def benchmark_sqlite(n_rounds: int = 1,
             side="bid",
             size=random_size,
             price=None,
-            owner_id=buyer.user_id
+            owner_id=buyer.user_id,
+            immediate_or_cancel=True
         )
         ch.basic_publish(
             exchange='', routing_key='incoming_order', body=ask.json)
@@ -250,7 +251,8 @@ def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI,
             side="bid",
             size=random_size,
             price=None,
-            owner_id=buyer.user_id
+            owner_id=buyer.user_id,
+            immediate_or_cancel=True
         )
         ch.basic_publish(
             exchange='', routing_key='incoming_order', body=ask.json)
