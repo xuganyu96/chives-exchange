@@ -6,13 +6,14 @@ import time
 
 import pika
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 from werkzeug.security import generate_password_hash
 
 from chives.models import Base, User, Company, Asset, Order, Transaction
 
 
-DEFAULT_SQLITE_PATH = "/tmp/benchmark.chives.sqlite"
+DEFAULT_SQLITE_URI = "sqlite:////tmp/benchmark.chives.sqlite"
 DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 BenchmarkResult = namedtuple("BenchmarkResult", ["run_seconds", "errors"])
 
@@ -82,9 +83,66 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
     return session.query(Asset).get((user_id, symbol))
 
 
-def benchmark_sqlite(n_rounds: int = 1,
-                     sqlite_path: str = DEFAULT_SQLITE_PATH,
-                     dry_run: bool = False):
+def _benchmark(sql_session: Session, 
+        queue_conn: pika.BlockingConnection, n_rounds: int) -> dt.datetime:
+    """The core logic of the benchmark: add pseudo users and bench company, 
+    inject assets, generate random sizes and prices, create stock order objects, 
+    then submit them to the queue
+
+    :param sql_session: [description]
+    :type sql_session: Session
+    :param queue_conn: [description]
+    :type queue_conn: pika.BlockingConnection
+    :param n_rounds: [description]
+    :type n_rounds: int
+    :return: A start datetime
+    :rtype: dt.datetime
+    """
+    # Open Message Queue channel
+    ch = queue_conn.channel()
+    ch.queue_declare(queue='incoming_order')
+
+    # Set up initial data
+    buyer = add_user("buyer", "password", sql_session)
+    seller = add_user("seller", "password", sql_session)
+    bench_company = add_company("BENCH", seller.user_id, sql_session)
+    inject_asset(seller.user_id, "_CASH", 10000000, sql_session)
+    inject_asset(buyer.user_id, "_CASH", 10000000, sql_session)
+    random_sizes = [random.randint(1, 100) for i in range(n_rounds)]
+    random_prices = [random.uniform(10, 100) for i in range(n_rounds)]
+
+    start_dttm = dt.datetime.utcnow()
+    for i in range(n_rounds):
+        random_size, random_price = random_sizes[i], random_prices[i]
+        injected_asset = inject_asset(
+            seller.user_id, bench_company.symbol, random_size, sql_session)
+        injected_asset.asset_amount -= random_size
+        sql_session.commit()
+        ask = Order(
+            security_symbol=bench_company.symbol,
+            side="ask",
+            size=random_size,
+            price=random_price,
+            owner_id=seller.user_id
+        )
+        bid = Order(
+            security_symbol=bench_company.symbol,
+            side="bid",
+            size=random_size,
+            price=None,
+            owner_id=buyer.user_id,
+            immediate_or_cancel=True
+        )
+        ch.basic_publish(
+            exchange='', routing_key='incoming_order', body=ask.json)
+        ch.basic_publish(
+            exchange='', routing_key='incoming_order', body=bid.json)
+    
+    return start_dttm
+
+
+def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI, 
+              verify_integrity: bool = True):
     """Remove existing benchmark.chives.sqlite, create a new one, initialize
     database schema, create buyer/seller/company, then for each round, submit 
     an order into the rabbitMQ. After all rounds, wait until transaction 
@@ -99,197 +157,46 @@ def benchmark_sqlite(n_rounds: int = 1,
     :type n_workers: int, optional
     :param n_rounds: [description], defaults to 1
     :type n_rounds: int, optional
-    :param dry_run: if set to True, stops the benchmark after all orders are 
+    :param verify_integrity: if set to True, stops the benchmark after all orders are 
     submitted, then return a BenchmarkResult with 0 second runtime and error 
     message "dry run"
     """
     # Set up database schema
-    remove_old_sqlite(sqlite_path)
-    sql_engine = create_engine(f"sqlite:///{sqlite_path}")
-    Base.metadata.create_all(sql_engine)
-    Session = sessionmaker(bind=sql_engine)
+    main_engine = create_engine(sql_uri)
+    Base.metadata.drop_all(main_engine) # it's okay to repeatedly run drop_all
+    Base.metadata.create_all(main_engine)
+    Session = sessionmaker(bind=main_engine)
     main_session = Session()
-
-    # Set up initial data
-    buyer = add_user("buyer", "password", main_session)
-    seller = add_user("seller", "password", main_session)
-    bench_company = add_company("BENCH", seller.user_id, main_session)
-    inject_asset(seller.user_id, "_CASH", 10000000, main_session)
-    inject_asset(buyer.user_id, "_CASH", 10000000, main_session)
 
     # Set up RabbitMQ connection
     mq = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
-    ch = mq.channel()
-    ch.queue_declare(queue='incoming_order')
 
-    # Generate random prices and sizes, then in sequential rounds, submit the 
-    # pairs of orders
-    random_sizes = [random.randint(1, 100) for i in range(n_rounds)]
-    random_prices = [random.uniform(10, 100) for i in range(n_rounds)]
-    start_dttm = dt.datetime.utcnow()
-    for i in range(n_rounds):
-        random_size, random_price = random_sizes[i], random_prices[i]
-        injected_asset = inject_asset(
-            seller.user_id, bench_company.symbol, random_size, main_session)
-        injected_asset.asset_amount -= random_size
-        main_session.commit()
-        ask = Order(
-            security_symbol=bench_company.symbol,
-            side="ask",
-            size=random_size,
-            price=random_price,
-            owner_id=seller.user_id
-        )
-        bid = Order(
-            security_symbol=bench_company.symbol,
-            side="bid",
-            size=random_size,
-            price=None,
-            owner_id=buyer.user_id,
-            immediate_or_cancel=True
-        )
-        ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=ask.json)
-        ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=bid.json)
+    # Start the initiation part of the benchmark
+    start_dttm = _benchmark(main_session, mq, n_rounds)
     
-    if dry_run:
+    if not verify_integrity:
         # Finish the benchmark without computing runtime or correctness
-        mq.close()
-        remove_old_sqlite(sqlite_path)
         print("Benchmark finished")
-        return BenchmarkResult(0, ["Dry run"])
-    
-    # Wait until there are as many transactions as there are rounds
-    while main_session.query(Transaction).count() < n_rounds:
-        time.sleep(1)
-    
-    # Check the transaction size and price, then report result
-    errors = []
-    for i in range(n_rounds):
-        tr = main_session.query(Transaction).get(i+1)
-        if tr.size != random_sizes[i]:
-            errors.append(
-                f"{tr} size mismatches expected size {random_sizes[i]}")
-        if tr.price != random_prices[i]:
-            errors.append(
-                f"{tr} price mismatches expected price {random_prices[i]}")
-    finish_dttm = main_session.query(Transaction).get(n_rounds).transact_dttm
-    run_seconds = (finish_dttm - start_dttm).total_seconds()
+        return BenchmarkResult(0, ["Skipped verifying integrity"])
+    else:
+        # TODO: despite the orders being submitted in pairs, it is not necessarily
+        # true that the transactions will be perfectly matching the pairs because 
+        # there can be more than one matching engines running asynchronously.
+        #
+        # This creates the possibility that there are fewer than or more than 
+        # n_rounds of transactions, and that there are more than 2 * n_rounds of 
+        # orders. The only way to know that all orders have been processed is by knowing 
+        # that the matching engines have all finished working. Without the 
+        # benchmark directly communicating with the matching engines, the 
+        # best way would be to count the number of mesages in the queue, and 
+        # declare end time to be when all messages have cleared in the queue. 
+        # This way the end time will be at most 1 heartbeat away from the true 
+        # finish time, which, because it is constant, it acceptable.
+        while main_session.query(Order).count() < (2 * n_rounds):
+            # Use .close() to force a database refresh
+            main_session.close(); time.sleep(1)
 
-    # Teardown
-    mq.close()
-    remove_old_sqlite(sqlite_path)
-    print("Benchmark finished")
-
-    return BenchmarkResult(run_seconds, errors)
-
-
-def benchmark_mysql(n_rounds: int = 1, sql_uri: str = DEFAULT_MYSQL_URI,
-        dry_run: bool = False):
-    """Remove existing benchmark.chives.sqlite, create a new one, initialize
-    database schema, create buyer/seller/company, then for each round, submit 
-    an order into the rabbitMQ. After all rounds, wait until transaction 
-    n_rounds exists, then report correctness and runtime.
-
-    This method is not responsible (and is unable to) for spawnning matching 
-    engines
-
-    :param sqlite_path: [description], defaults to DEFAULT_SQLITE_PATH
-    :type sqlite_path: str, optional
-    :param n_workers: [description], defaults to 1
-    :type n_workers: int, optional
-    :param n_rounds: [description], defaults to 1
-    :type n_rounds: int, optional
-    :param dry_run: if set to True, stops the benchmark after all orders are 
-    submitted, then return a BenchmarkResult with 0 second runtime and error 
-    message "dry run"
-    """
-    # Dropping database as a set up is tricky; I will leave it to docker run 
-    # and docker stop as setup/teardown
-
-    # Set up schemas
-    sql_engine = create_engine(sql_uri)
-    Base.metadata.create_all(sql_engine)
-    Session = sessionmaker(bind=sql_engine)
-    main_session = Session()
-
-    # Set up initial data
-    buyer = add_user("buyer", "password", main_session)
-    seller = add_user("seller", "password", main_session)
-    bench_company = add_company("BENCH", seller.user_id, main_session)
-    inject_asset(seller.user_id, "_CASH", 10000000, main_session)
-    inject_asset(buyer.user_id, "_CASH", 10000000, main_session)
-
-    # Set up RabbitMQ connection
-    mq = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
-    ch = mq.channel()
-    ch.queue_declare(queue='incoming_order')
-
-    # Generate random prices and sizes, then in sequential rounds, submit the 
-    # pairs of orders
-    random_sizes = [random.randint(1, 100) for i in range(n_rounds)]
-    random_prices = [random.uniform(10, 100) for i in range(n_rounds)]
-    start_dttm = dt.datetime.utcnow()
-    for i in range(n_rounds):
-        random_size, random_price = random_sizes[i], random_prices[i]
-        injected_asset = inject_asset(
-            seller.user_id, bench_company.symbol, random_size, main_session)
-        injected_asset.asset_amount -= random_size
-        main_session.commit()
-        ask = Order(
-            security_symbol=bench_company.symbol,
-            side="ask",
-            size=random_size,
-            price=random_price,
-            owner_id=seller.user_id
-        )
-        bid = Order(
-            security_symbol=bench_company.symbol,
-            side="bid",
-            size=random_size,
-            price=None,
-            owner_id=buyer.user_id,
-            immediate_or_cancel=True
-        )
-        ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=ask.json)
-        ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=bid.json)
-    print("All orders submitted")
-    if dry_run:
-        # Finish the benchmark without computing runtime or correctness
+        # Don't forget to close the active connections
         mq.close()
-        print("Benchmark finished")
-        return BenchmarkResult(0, ["Dry run"])
-    
-    # Use .close() to reset the connection since we are now querying results 
-    # that were modified by an SQLAlchemy ORM Session in a different process
-    main_session.close(); time.sleep(1)
-    print("Waiting until all transactions are posted")
-    # import pdb; pdb.set_trace()
-    time.sleep(1)
-    while main_session.query(Transaction).count() < n_rounds:
-        main_session.close(); time.sleep(1)
-    
-    # Check the transaction size and price, then report result
-    errors = []
-    for i in range(n_rounds):
-        tr = main_session.query(Transaction).get(i+1)
-        if tr.size != random_sizes[i]:
-            errors.append(
-                f"{tr} size mismatches expected size {random_sizes[i]}")
-        if abs(tr.price - random_prices[i]) > 0.01:
-            errors.append(
-                f"{tr} price mismatches expected price {random_prices[i]}")
-    print("Benchmark correctness verified")
-    finish_dttm = main_session.query(Transaction).get(n_rounds).transact_dttm
-    run_seconds = (finish_dttm - start_dttm).total_seconds()
-
-    # Teardown
-    mq.close()
-    print("Benchmark finished")
-
-    return BenchmarkResult(run_seconds, errors)
+        return BenchmarkResult(0, [])
