@@ -17,10 +17,6 @@ DEFAULT_SQLITE_URI = "sqlite:////tmp/benchmark.chives.sqlite"
 DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 BenchmarkResult = namedtuple("BenchmarkResult", ["run_seconds", "errors"])
 
-def remove_old_sqlite(filepath: str = DEFAULT_SQLITE_PATH):
-    if os.path.isfile(filepath):
-        os.remove(filepath)
-
 
 def add_user(username: str, password: str, sql_session: Session) -> User:
     """Add a user with the username and password, then return the user object;
