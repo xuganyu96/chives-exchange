@@ -1,5 +1,6 @@
 import datetime as dt
 from collections import namedtuple
+import logging
 import os 
 import random
 import time
@@ -16,6 +17,15 @@ from chives.models import Base, User, Company, Asset, Order, Transaction
 DEFAULT_SQLITE_URI = "sqlite:////tmp/benchmark.chives.sqlite"
 DEFAULT_MYSQL_URI = "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 BenchmarkResult = namedtuple("BenchmarkResult", ["run_seconds", "errors"])
+
+logger = logging.getLogger("chives.benchmark")
+logger.setLevel(logging.INFO)
+chandle = logging.StreamHandler()
+chandle.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+chandle.setFormatter(formatter)
+logger.addHandler(chandle)
 
 
 def add_user(username: str, password: str, sql_session: Session) -> User:
@@ -158,40 +168,40 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
     message "dry run"
     """
     # Set up database schema
+    logger.info(f"""Starting benchmark session: 
+    number of rounds: {n_rounds}
+    Database URI: {sql_uri}""")
     main_engine = create_engine(sql_uri)
     Base.metadata.drop_all(main_engine) # it's okay to repeatedly run drop_all
     Base.metadata.create_all(main_engine)
     Session = sessionmaker(bind=main_engine)
     main_session = Session()
+    logger.info(f"""Database schemas dropped and re-created""")
 
     # Set up RabbitMQ connection
     mq = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
+    logger.info(f"RabbitMQ connected")
 
     # Start the initiation part of the benchmark
     start_dttm = _benchmark(main_session, mq, n_rounds)
+    logger.info("All order messages submitted to queue")
     
     if not verify_integrity:
         # Finish the benchmark without computing runtime or correctness
-        print("Benchmark finished")
+        logger.info("Skipped integrity verification. Benchmark finished")
         return BenchmarkResult(0, ["Skipped verifying integrity"])
     else:
-        # TODO: despite the orders being submitted in pairs, it is not necessarily
-        # true that the transactions will be perfectly matching the pairs because 
-        # there can be more than one matching engines running asynchronously.
-        #
-        # This creates the possibility that there are fewer than or more than 
-        # n_rounds of transactions, and that there are more than 2 * n_rounds of 
-        # orders. The only way to know that all orders have been processed is by knowing 
-        # that the matching engines have all finished working. Without the 
-        # benchmark directly communicating with the matching engines, the 
-        # best way would be to count the number of mesages in the queue, and 
-        # declare end time to be when all messages have cleared in the queue. 
-        # This way the end time will be at most 1 heartbeat away from the true 
-        # finish time, which, because it is constant, it acceptable.
-        while main_session.query(Order).count() < (2 * n_rounds):
-            # Use .close() to force a database refresh
-            main_session.close(); time.sleep(1)
+        # Wait until all messages have been processed
+        msg_count = mq.channel().queue_declare(
+            queue='incoming_order', passive=True).method.message_count
+        logger.info(msg_count)
+        while msg_count > 0:
+            logger.info(msg_count)
+            msg_count = mq.channel().queue_declare(
+                queue='incoming_order', passive=True).method.message_count
+        
+        logger.info("Integrity verified. Benchmark finished")
 
         # Don't forget to close the active connections
         mq.close()
