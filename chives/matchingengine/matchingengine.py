@@ -66,8 +66,9 @@ class OrderBook:
     
     def get_candidates(self, incoming: Order) -> ty.List[Order]:
         """Given an incoming order, return all active orders of the same 
-        security symbol, that are on the opposite sides, and that offer better 
-        price than the incoming order, if the incoming order has a target price
+        security symbol, that are on the opposite sides, that do not come from 
+        the same owner, and that offer better price than the incoming order, 
+        if the incoming order has a target price
 
         :param incoming: the incoming order
         :type incoming: Order
@@ -77,6 +78,8 @@ class OrderBook:
         candidates: ty.List[Order] = []
         cond = (Order.security_symbol == incoming.security_symbol) \
             & (Order.active == True)
+        if incoming.owner_id:
+            cond = cond & (Order.owner_id != incoming.owner_id)
         sort_key = None
         if incoming.side == "bid":
             cond = cond & (Order.side == "ask")
