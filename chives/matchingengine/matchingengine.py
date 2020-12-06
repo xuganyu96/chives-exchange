@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import os
+import socket
 import sys
 import time
 import typing as ty
@@ -10,7 +11,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 
-from chives.models import Base, Order, Transaction, Asset, User, Company
+from chives.models import (
+    Base, Order, Transaction, Asset, User, Company, MatchingEngineLog)
 
 
 # I am not adding file handler because at deployment, I will use an orchestrator 
@@ -123,7 +125,8 @@ class MatchingEngine:
     """
 
     def __init__(self, me_sql_engine: SQLEngine,
-                       ignore_user_logic: bool = False):
+                       ignore_user_logic: bool = False,
+                       hostname: str = None):
         """Initialize the matching engine by instantiating the order book and 
         creating a engine-bound session
 
@@ -132,11 +135,16 @@ class MatchingEngine:
         :param ignore_user_logic: if True, the matching engine will not modify 
         user assets after transactions are committed. Defaults to False
         :type ignore_user_logic: bool
+        :param hostname: if a hostname is specified, use the specified hostname 
+        otherwise, use socket.gethostname(), defaults to None
+        :type hostname: str, optional
         """
         Session = sessionmaker(bind=me_sql_engine)
         self.session = Session()
         self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
+        self.hostname = hostname if hostname else socket.gethostname()
+        self.pid = os.getpid()
     
     @classmethod 
     def propose_trade(cls, incoming: Order, 
@@ -400,7 +408,7 @@ def start_engine(queue_host: str, sql_engine: SQLEngine,
     logger.info("Connected to RabbitMQ")
     
     me = MatchingEngine(sql_engine)
-    logger.info("Matching engine initialized")
+    logger.info(f"Matching engine initialized @ {me.hostname} with pid {me.pid}")
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
