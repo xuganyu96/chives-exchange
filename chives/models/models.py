@@ -237,3 +237,20 @@ class Transaction(Base):
 
     def __str__(self):
         return self.__repr__()
+
+
+class MatchingEngineLog(Base):
+    """A database-side logging table for recording matching engine's activities:
+
+    :param Base: [description]
+    :type Base: [type]
+    """
+    __tablename__ = 'me_logs'
+
+    log_id = Column(Integer, primary_key=True)
+    hostname = Column(String(256), nullable=False)
+    pid = Column(Integer, nullable=False)
+    log_dttm = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    log_msg = Column(String(1024))
+    ext_ref = Column(String(32))
+    ext_ref_id = Column(Integer)
