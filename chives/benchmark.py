@@ -188,6 +188,13 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
     # Start the initiation part of the benchmark
     start_dttm = _benchmark(main_session, mq, n_rounds)
     logger.info("All order messages submitted to queue")
+    # Once all messages have been submitted, the connection to the rabbitMQ 
+    # should be closed immediately; according to the documentation:
+    # https://pika.readthedocs.io/en/stable/examples/heartbeat_and_blocked_timeouts.html
+    # blocking connection times out after 60 seconds, which means that trying 
+    # to close a connection after the timeout will result in an error:
+    mq.close()
+    logger.info("RabbitMQ connection gracefully closed")
     
     if not verify_integrity:
         # Finish the benchmark without computing runtime or correctness
@@ -208,6 +215,4 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
         # TODO: implement verification
         logger.info("Integrity verified. Benchmark finished")
 
-        # Don't forget to close the active connections
-        mq.close()
         return BenchmarkResult(run_seconds, [])
