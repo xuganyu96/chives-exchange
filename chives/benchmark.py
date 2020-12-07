@@ -11,7 +11,9 @@ from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 from werkzeug.security import generate_password_hash
 
-from chives.models import Base, User, Company, Asset, Order, Transaction
+from chives.models import (
+    Base, User, Company, Asset, Order, Transaction, MatchingEngineLog)
+from chives.matchingengine import MatchingEngine
 
 
 DEFAULT_SQLITE_URI = "sqlite:////tmp/benchmark.chives.sqlite"
@@ -192,17 +194,20 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
         logger.info("Skipped integrity verification. Benchmark finished")
         return BenchmarkResult(0, ["Skipped verifying integrity"])
     else:
-        # Wait until all messages have been processed
-        msg_count = mq.channel().queue_declare(
-            queue='incoming_order', passive=True).method.message_count
-        logger.info(msg_count)
-        while msg_count > 0:
-            logger.info(msg_count)
-            msg_count = mq.channel().queue_declare(
-                queue='incoming_order', passive=True).method.message_count
+        # Wait until there are 2 * n_rounds "heartbeat_finished" messages
+        hbfinished = MatchingEngineLog.log_msg == MatchingEngine.heartbeat_finish_msg
+        while main_session.query(MatchingEngineLog)\
+            .filter(hbfinished).count() < (2 * n_rounds):
+            main_session.close(); time.sleep(1)
+        # Get the last of all heartbeat_finish message
+        log_dttm_desc = MatchingEngineLog.log_dttm.desc()
+        latest_log = main_session.query(MatchingEngineLog)\
+            .filter(hbfinished).order_by(log_dttm_desc).first()
+        run_seconds = (latest_log.log_dttm - start_dttm).total_seconds()
         
+        # TODO: implement verification
         logger.info("Integrity verified. Benchmark finished")
 
         # Don't forget to close the active connections
         mq.close()
-        return BenchmarkResult(0, [])
+        return BenchmarkResult(run_seconds, [])
