@@ -410,7 +410,7 @@ class MatchingEngine:
 
 
 def start_engine(queue_host: str, sql_engine: SQLEngine, 
-    dry_run: bool = False):
+        dry_run: bool = False):
     """Initialize a RabbitMQ connection and a matching engine instance, then 
     start listening in for incoming order
 
@@ -431,15 +431,19 @@ def start_engine(queue_host: str, sql_engine: SQLEngine,
     logger.info("Connected to RabbitMQ")
     
     me = MatchingEngine(sql_engine)
-    logger.info(f"Matching engine initialized @ {me.hostname} with pid {me.pid}")
+    logger.info(f"Matching engine started at {me.hostname} with pid {me.pid}")
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
         if not dry_run:
             me.heartbeat(Order.from_json(body))
+        ch.basic_ack(delivery_tag=method.delivery_tag)
     
+    # Tells RabbitMQ not to give more than one message at a time;
+    # do not dispatch a new message to a worker until it has processed and 
+    # acknowledged the previous one
+    ch.basic_qos(prefetch_count=1) 
     ch.basic_consume(queue="incoming_order", 
-                     on_message_callback=msg_callback,
-                     auto_ack=True)
+                     on_message_callback=msg_callback)
     logger.info("Listening for incoming order")
     ch.start_consuming()            
