@@ -4,6 +4,7 @@ import logging
 import os 
 import random
 import time
+import typing as ty
 
 import pika
 from sqlalchemy import create_engine
@@ -92,7 +93,8 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
 
 
 def _benchmark(sql_session: Session, 
-        queue_conn: pika.BlockingConnection, n_rounds: int) -> dt.datetime:
+        queue_conn: pika.BlockingConnection, n_rounds: int) -> ty.Tuple[
+            dt.datetime, ty.List[int], ty.List[float]]:
     """The core logic of the benchmark: add pseudo users and bench company, 
     inject assets, generate random sizes and prices, create stock order objects, 
     then submit them to the queue
@@ -146,7 +148,7 @@ def _benchmark(sql_session: Session,
         ch.basic_publish(
             exchange='', routing_key='incoming_order', body=bid.json)
     
-    return start_dttm
+    return start_dttm, random_sizes, random_prices
 
 
 def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI, 
@@ -186,7 +188,8 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
     logger.info(f"RabbitMQ connected")
 
     # Start the initiation part of the benchmark
-    start_dttm = _benchmark(main_session, mq, n_rounds)
+    start_dttm, random_sizes, random_prices = _benchmark(
+        main_session, mq, n_rounds)
     logger.info("All order messages submitted to queue")
     # Once all messages have been submitted, the connection to the rabbitMQ 
     # should be closed immediately; according to the documentation:
@@ -212,7 +215,35 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
             .filter(hbfinished).order_by(log_dttm_desc).first()
         run_seconds = (latest_log.log_dttm - start_dttm).total_seconds()
         
-        # TODO: implement verification
-        logger.info("Integrity verified. Benchmark finished")
+        # TODO: this is only a naive integrity verification that assumed there 
+        # to be exactly 1 matching engine running.
+        # This verification checks that there are n_rounds transactions and 
+        # that their sizes and prices checkout
+        error_msgs = []
+        n_ts = main_session.query(Transaction).count()
+        if n_ts != n_rounds:
+            error_msgs.append(f"Expected {n_rounds} transactions, found {n_ts}")
+        else:
+            for i in range(n_rounds):
+                t_id = i + 1
+                t = main_session.query(Transaction).get(t_id)
+                exp_bid_id = t_id * 2
+                exp_ask_id = exp_bid_id - 1
+                exp_size = random_sizes[i] 
+                exp_price = random_prices[i]
+                # the bid_id should be t_id * 2 and the ask_id should be bid_id - 1
+                if t.bid_id != exp_bid_id:
+                    error_msgs.append(
+                        f"{t} Expected bid_id {exp_bid_id}, got {t.bid_id}")
+                if t.ask_id != exp_ask_id:
+                    error_msgs.append(
+                        f"{t} Expected ask_id exp_ask_id, got {t.ask_id}")
+                if t.size != exp_size:
+                    error_msgs.append(
+                        f"{t} Expected size {exp_size}, got {t.size}")
+                if abs(t.price - exp_price) >= 0.01:
+                    error_msgs.append(
+                        f"{t} Expected price {exp_price}, got {t.price}")
+        logger.info(f"Benchmark finished; {len(error_msgs)} inconsistencies found")
 
-        return BenchmarkResult(run_seconds, [])
+        return BenchmarkResult(run_seconds, error_msgs)
