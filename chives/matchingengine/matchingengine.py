@@ -123,6 +123,7 @@ class MatchingEngine:
     order book instance and provides an algorithm for matching incoming orders 
     with active orders
     """
+    heartbeat_finish_msg = "Heartbeat finished"
 
     def __init__(self, me_sql_engine: SQLEngine,
                        ignore_user_logic: bool = False,
@@ -383,7 +384,29 @@ class MatchingEngine:
             mr.incoming_remain.cancelled_dttm = dt.datetime.utcnow()
             mr.incoming_remain.active = False
         
+        self.log_to_sql(msg=self.heartbeat_finish_msg)
         return mr
+
+    def log_to_sql(self, msg: str, ext_ref: str = None, ext_ref_id: int = None):
+        """Add a log message to the me_logs table
+
+        :param msg: the message; if the message is longer than 1024 characters, 
+        then it will be truncated
+        :type msg: str
+        :param ext_ref: table name of an external record, defaults to None
+        :type ext_ref: str, optional
+        :param ext_ref_id: id of the external record, defaults to None
+        :type ext_ref_id: int, optional
+        """
+        msg = msg[:1024]
+        self.session.add(MatchingEngineLog(
+            hostname=self.hostname,
+            pid=self.pid,
+            log_msg=msg,
+            ext_ref=ext_ref,
+            ext_ref_id=ext_ref_id
+        ))
+        self.session.commit()
 
 
 def start_engine(queue_host: str, sql_engine: SQLEngine, 
