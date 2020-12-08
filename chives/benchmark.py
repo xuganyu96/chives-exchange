@@ -92,7 +92,7 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
     return session.query(Asset).get((user_id, symbol))
 
 
-def verify_integrity(session: Session) -> ty.List[str]:
+def order_tracing(session: Session) -> ty.List[str]:
     """Perform order/transaction integrity verification and return a list of 
     error messages each describing an inconsistency
 
@@ -275,11 +275,7 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
             .filter(hbfinished).order_by(log_dttm_desc).first()
         run_seconds = (latest_log.log_dttm - start_dttm).total_seconds()
         
-        # TODO: this is only a naive integrity verification that assumed there 
-        # to be exactly 1 matching engine running.
-        # This verification checks that there are n_rounds transactions and 
-        # that their sizes and prices checkout
-        error_msgs = verify_integrity(main_session)
+        error_msgs = order_tracing(main_session)
         logger.info(f"Benchmark finished; {len(error_msgs)} inconsistencies found")
 
         return BenchmarkResult(run_seconds, error_msgs)
