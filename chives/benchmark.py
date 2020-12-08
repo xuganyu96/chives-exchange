@@ -7,7 +7,7 @@ import time
 import typing as ty
 
 import pika
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 from werkzeug.security import generate_password_hash
@@ -90,6 +90,66 @@ def inject_asset(user_id: int, symbol: str, amount: int, session: Session):
     session.commit()
 
     return session.query(Asset).get((user_id, symbol))
+
+
+def verify_integrity(session: Session) -> ty.List[str]:
+    """Perform order/transaction integrity verification and return a list of 
+    error messages each describing an inconsistency
+
+    :param session: [description]
+    :type session: Session
+    :return: [description]
+    :rtype: ty.List[str]
+    """
+    errors = []
+    session.expire_all()
+    n_orders = session.query(Order).count()
+    logger.info(f"Inspecting {n_orders} orders")
+    for i in range(n_orders):
+        inspected_order: Order = session.query(Order).get(i+1)
+        if inspected_order.side == "bid":
+            trns_filter = Transaction.bid_id == inspected_order.order_id
+        else:
+            trns_filter = Transaction.ask_id == inspected_order.order_id
+        trades = session.query(Transaction).filter(trns_filter).all()
+        trade_volume = sum([t.size for t in trades])
+        
+        if trade_volume == inspected_order.size:
+            logger.debug(f"{inspected_order} is fully traded")
+        elif trade_volume > inspected_order.size:
+            error_msg = f"{inspected_order} is over-traded with volume {trade_volume}"
+            logger.warning(error_msg)
+            errors.append(error_msg)
+        elif trade_volume > 0:
+            # inspected_order is partially traded so we look for sub-order 
+            suborder = session.query(Order).filter(
+                Order.parent_order_id == inspected_order.order_id).first()
+            if suborder is None:
+                error_msg = f"{inspected_order} is partially fulfilled but no suborder is found"
+                logger.warning(error_msg)
+                errors.append(error_msg)
+            else:
+                if suborder.size + trade_volume != inspected_order.size:
+                    error_msg = f"{inspected_order}, its remains {suborder}, and trade volume {trade_volume} are inconsistent"
+                    logger.warning(error_msg)
+                    errors.append(error_msg)
+                elif inspected_order.immediate_or_cancel \
+                    and suborder.cancelled_dttm is None:
+                    error_msg = f"{inspected_order} is IOC, but its remains {suborder} is not cancelled"
+                    logger.warning(error_msg)
+                    errors.append(error_msg)
+            logger.debug(f"{inspected_order} is partially fulfilled and its remaining is correct")
+        else:
+            # inspected_order is not traded at all 
+            if (not inspected_order.active) \
+                and (inspected_order.cancelled_dttm is None):
+                error_msg = f"{inspected_order} is not traded at all, but it is neither active nor cancelled"
+                logger.warning(error_msg)
+                errors.append(error_msg)
+            else:
+                logger.debug(f"{inspected_order} is not traded at all")
+    
+    return errors
 
 
 def _benchmark(sql_session: Session, 
@@ -219,31 +279,7 @@ def benchmark(n_rounds: int = 1, sql_uri: str = DEFAULT_SQLITE_URI,
         # to be exactly 1 matching engine running.
         # This verification checks that there are n_rounds transactions and 
         # that their sizes and prices checkout
-        error_msgs = []
-        n_ts = main_session.query(Transaction).count()
-        if n_ts != n_rounds:
-            error_msgs.append(f"Expected {n_rounds} transactions, found {n_ts}")
-        else:
-            for i in range(n_rounds):
-                t_id = i + 1
-                t = main_session.query(Transaction).get(t_id)
-                exp_bid_id = t_id * 2
-                exp_ask_id = exp_bid_id - 1
-                exp_size = random_sizes[i] 
-                exp_price = random_prices[i]
-                # the bid_id should be t_id * 2 and the ask_id should be bid_id - 1
-                if t.bid_id != exp_bid_id:
-                    error_msgs.append(
-                        f"{t} Expected bid_id {exp_bid_id}, got {t.bid_id}")
-                if t.ask_id != exp_ask_id:
-                    error_msgs.append(
-                        f"{t} Expected ask_id exp_ask_id, got {t.ask_id}")
-                if t.size != exp_size:
-                    error_msgs.append(
-                        f"{t} Expected size {exp_size}, got {t.size}")
-                if abs(t.price - exp_price) >= 0.01:
-                    error_msgs.append(
-                        f"{t} Expected price {exp_price}, got {t.price}")
+        error_msgs = verify_integrity(main_session)
         logger.info(f"Benchmark finished; {len(error_msgs)} inconsistencies found")
 
         return BenchmarkResult(run_seconds, error_msgs)
