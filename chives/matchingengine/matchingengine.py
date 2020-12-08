@@ -140,7 +140,7 @@ class MatchingEngine:
         otherwise, use socket.gethostname(), defaults to None
         :type hostname: str, optional
         """
-        Session = sessionmaker(bind=me_sql_engine)
+        Session = sessionmaker(bind=me_sql_engine, autoflush=False)
         self.session = Session()
         self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
@@ -200,7 +200,7 @@ class MatchingEngine:
 
                 return transaction
     
-    def heartbeat(self, incoming: Order):
+    def _heartbeat(self, incoming: Order):
         """Register the incoming order into the main database, run it against 
         self.match, then commit the changes to main database and/or the 
         orderbook database
@@ -322,7 +322,17 @@ class MatchingEngine:
         
         self.session.commit()
         self.log_to_sql(msg=self.heartbeat_finish_msg)
-    
+
+    def heartbeat(self, incoming: Order):
+        try:
+            logger.info(f"Trying to heartbeat {incoming}")
+            self._heartbeat(incoming)
+            logger.info(f"Heartbeated {incoming}")
+        except Exception as e:
+            logger.error(f"Commit failed: {e}")
+            self.session.rollback()
+            self.heartbeat(incoming)
+
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
 
