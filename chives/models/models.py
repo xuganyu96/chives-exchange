@@ -222,6 +222,11 @@ class Transaction(Base):
         ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=False)
     bid_id = Column(Integer, 
         ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=False)
+    aggressor_order_id = Column(Integer, 
+        ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=False)
+    resting_order_id = Column(Integer,
+        ForeignKey('orders.order_id', ondelete="CASCADE"), 
+        nullable=False, unique=True)
     transact_dttm = Column(DateTime, nullable=False, default=dt.datetime.utcnow)
 
     def __repr__(self):
