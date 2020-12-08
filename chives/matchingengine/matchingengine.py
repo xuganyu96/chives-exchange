@@ -193,7 +193,9 @@ class MatchingEngine:
                     size=transaction_size,
                     price=candidate.price,
                     ask_id=ask.order_id,
-                    bid_id=bid.order_id
+                    bid_id=bid.order_id,
+                    aggressor_order_id=incoming.order_id,
+                    resting_order_id=candidate.order_id
                 )
 
                 return transaction
