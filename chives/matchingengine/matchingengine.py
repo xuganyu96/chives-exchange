@@ -235,28 +235,23 @@ class MatchingEngine:
         # Read the module README for how each type of match result is handled
         #
         self.session.merge(match_result.incoming)
-        # self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
             and match_result.incoming_remain is not None:
             self.session.add(match_result.incoming_remain)
-            # self.session.commit()
         
         
         if len(match_result.deactivated) > 0:
             for deactivated in match_result.deactivated:
                 main_entry = self.session.query(Order).get(deactivated)
                 main_entry.active = False 
-            # self.session.commit()
 
         if match_result.reactivated is not None:
             self.session.add(match_result.reactivated)
-            # self.session.commit()
 
         if len(match_result.transactions) > 0:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
-                # self.session.commit()
                 if not self.ignore_user_logic:
                     # Identify the seller and the buyer.
                     ask = self.session.query(Order).get(transaction.ask_id)
@@ -272,7 +267,6 @@ class MatchingEngine:
                         (seller.user_id, "_CASH")
                     )
                     seller_cash.asset_amount += cash_volume
-                    # self.session.commit()
 
                     # Buyer gains stock and loses cash, both of which will 
                     # happen here, since there is no telling what price the 
@@ -296,13 +290,11 @@ class MatchingEngine:
                         (buyer.user_id, "_CASH")
                     )
                     buyer_cash.asset_amount -= cash_volume
-                    # self.session.commit()
 
                     # Update the company's market price
                     company = self.session.query(Company).get(
                         transaction.security_symbol)
                     company.market_price = transaction.price
-                    # self.session.commit()
         
         if not self.ignore_user_logic:
             # If the incoming order is a selling order that is not 
@@ -318,7 +310,6 @@ class MatchingEngine:
                 refund_size = match_result.incoming_remain.size
                 logger.debug(f"Refunding {refund_size} shares")
                 source_asset.asset_amount += refund_size
-                # self.session.commit()
         
         self.session.commit()
         self.log_to_sql(msg=self.heartbeat_finish_msg)
