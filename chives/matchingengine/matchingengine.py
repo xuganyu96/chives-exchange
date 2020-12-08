@@ -1,7 +1,9 @@
 import datetime as dt
 import logging
 import os
+import socket
 import sys
+import time
 import typing as ty
 
 import pika
@@ -9,7 +11,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 
-from chives.models import Base, Order, Transaction, Asset, User, Company
+from chives.models import (
+    Base, Order, Transaction, Asset, User, Company, MatchingEngineLog)
 
 
 # I am not adding file handler because at deployment, I will use an orchestrator 
@@ -65,8 +68,9 @@ class OrderBook:
     
     def get_candidates(self, incoming: Order) -> ty.List[Order]:
         """Given an incoming order, return all active orders of the same 
-        security symbol, that are on the opposite sides, and that offer better 
-        price than the incoming order, if the incoming order has a target price
+        security symbol, that are on the opposite sides, that do not come from 
+        the same owner, and that offer better price than the incoming order, 
+        if the incoming order has a target price
 
         :param incoming: the incoming order
         :type incoming: Order
@@ -76,6 +80,8 @@ class OrderBook:
         candidates: ty.List[Order] = []
         cond = (Order.security_symbol == incoming.security_symbol) \
             & (Order.active == True)
+        if incoming.owner_id:
+            cond = cond & (Order.owner_id != incoming.owner_id)
         sort_key = None
         if incoming.side == "bid":
             cond = cond & (Order.side == "ask")
@@ -117,9 +123,11 @@ class MatchingEngine:
     order book instance and provides an algorithm for matching incoming orders 
     with active orders
     """
+    heartbeat_finish_msg = "Heartbeat finished"
 
     def __init__(self, me_sql_engine: SQLEngine,
-                       ignore_user_logic: bool = False):
+                       ignore_user_logic: bool = False,
+                       hostname: str = None):
         """Initialize the matching engine by instantiating the order book and 
         creating a engine-bound session
 
@@ -128,11 +136,16 @@ class MatchingEngine:
         :param ignore_user_logic: if True, the matching engine will not modify 
         user assets after transactions are committed. Defaults to False
         :type ignore_user_logic: bool
+        :param hostname: if a hostname is specified, use the specified hostname 
+        otherwise, use socket.gethostname(), defaults to None
+        :type hostname: str, optional
         """
-        Session = sessionmaker(bind=me_sql_engine)
+        Session = sessionmaker(bind=me_sql_engine, autoflush=False)
         self.session = Session()
         self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
+        self.hostname = hostname if hostname else socket.gethostname()
+        self.pid = os.getpid()
     
     @classmethod 
     def propose_trade(cls, incoming: Order, 
@@ -180,12 +193,14 @@ class MatchingEngine:
                     size=transaction_size,
                     price=candidate.price,
                     ask_id=ask.order_id,
-                    bid_id=bid.order_id
+                    bid_id=bid.order_id,
+                    aggressor_order_id=incoming.order_id,
+                    resting_order_id=candidate.order_id
                 )
 
                 return transaction
     
-    def heartbeat(self, incoming: Order):
+    def _heartbeat(self, incoming: Order):
         """Register the incoming order into the main database, run it against 
         self.match, then commit the changes to main database and/or the 
         orderbook database
@@ -194,6 +209,7 @@ class MatchingEngine:
         :type incoming: Order
         """
         logger.debug("Starting new heartbeat")
+        self.session.close(); time.sleep(0.01)
         # The canonical way of receiving orders is from order submissions 
         # from webserver to the order queue, and since the webserver already 
         # commits the order into the main database, there should not be the 
@@ -219,28 +235,23 @@ class MatchingEngine:
         # Read the module README for how each type of match result is handled
         #
         self.session.merge(match_result.incoming)
-        self.session.commit()
         
         if match_result.incoming_remain is not match_result.incoming\
             and match_result.incoming_remain is not None:
             self.session.add(match_result.incoming_remain)
-            self.session.commit()
         
         
         if len(match_result.deactivated) > 0:
             for deactivated in match_result.deactivated:
                 main_entry = self.session.query(Order).get(deactivated)
                 main_entry.active = False 
-            self.session.commit()
 
         if match_result.reactivated is not None:
             self.session.add(match_result.reactivated)
-            self.session.commit()
 
         if len(match_result.transactions) > 0:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
-                self.session.commit()
                 if not self.ignore_user_logic:
                     # Identify the seller and the buyer.
                     ask = self.session.query(Order).get(transaction.ask_id)
@@ -256,7 +267,6 @@ class MatchingEngine:
                         (seller.user_id, "_CASH")
                     )
                     seller_cash.asset_amount += cash_volume
-                    self.session.commit()
 
                     # Buyer gains stock and loses cash, both of which will 
                     # happen here, since there is no telling what price the 
@@ -280,13 +290,11 @@ class MatchingEngine:
                         (buyer.user_id, "_CASH")
                     )
                     buyer_cash.asset_amount -= cash_volume
-                    self.session.commit()
 
                     # Update the company's market price
                     company = self.session.query(Company).get(
                         transaction.security_symbol)
                     company.market_price = transaction.price
-                    self.session.commit()
         
         if not self.ignore_user_logic:
             # If the incoming order is a selling order that is not 
@@ -302,10 +310,20 @@ class MatchingEngine:
                 refund_size = match_result.incoming_remain.size
                 logger.debug(f"Refunding {refund_size} shares")
                 source_asset.asset_amount += refund_size
-                self.session.commit()
         
-        logger.debug("Heartbeat finished")
-    
+        self.session.commit()
+        self.log_to_sql(msg=self.heartbeat_finish_msg)
+
+    def heartbeat(self, incoming: Order):
+        try:
+            logger.info(f"Trying to heartbeat {incoming}")
+            self._heartbeat(incoming)
+            logger.info(f"Heartbeated {incoming}")
+        except Exception as e:
+            logger.error(f"Commit failed: {e}")
+            self.session.rollback()
+            self.heartbeat(incoming)
+
     def match(self, incoming: Order) -> MatchResult:
         """The specific logic is recorded in the module README.
 
@@ -372,8 +390,42 @@ class MatchingEngine:
         
         return mr
 
+    def log_to_sql(self, msg: str, ext_ref: str = None, ext_ref_id: int = None):
+        """Add a log message to the me_logs table
 
-def start_engine(queue_host: str, sql_engine: SQLEngine):
+        :param msg: the message; if the message is longer than 1024 characters, 
+        then it will be truncated
+        :type msg: str
+        :param ext_ref: table name of an external record, defaults to None
+        :type ext_ref: str, optional
+        :param ext_ref_id: id of the external record, defaults to None
+        :type ext_ref_id: int, optional
+        """
+        msg = msg[:1024]
+        self.session.add(MatchingEngineLog(
+            hostname=self.hostname,
+            pid=self.pid,
+            log_msg=msg,
+            ext_ref=ext_ref,
+            ext_ref_id=ext_ref_id
+        ))
+        self.session.commit()
+
+
+def start_engine(queue_host: str, sql_engine: SQLEngine, 
+        dry_run: bool = False):
+    """Initialize a RabbitMQ connection and a matching engine instance, then 
+    start listening in for incoming order
+
+    :param queue_host: hostname of the RabbitMQ server
+    :type queue_host: str
+    :param sql_engine: an SQLAlchemy engine that the matching engine uses to 
+    construct the ORM session
+    :type sql_engine: SQLEngine
+    :param dry_run: if True, the matching engine will not heartbeat upon 
+    receiving the incoming message, defaults to False
+    :type dry_run: bool, optional
+    """
     logger.info("Starting matching engine")
 
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
@@ -382,14 +434,19 @@ def start_engine(queue_host: str, sql_engine: SQLEngine):
     logger.info("Connected to RabbitMQ")
     
     me = MatchingEngine(sql_engine)
-    logger.info("Matching engine initialized")
+    logger.info(f"Matching engine started at {me.hostname} with pid {me.pid}")
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
-        me.heartbeat(Order.from_json(body))
+        if not dry_run:
+            me.heartbeat(Order.from_json(body))
+        ch.basic_ack(delivery_tag=method.delivery_tag)
     
+    # Tells RabbitMQ not to give more than one message at a time;
+    # do not dispatch a new message to a worker until it has processed and 
+    # acknowledged the previous one
+    ch.basic_qos(prefetch_count=1) 
     ch.basic_consume(queue="incoming_order", 
-                     on_message_callback=msg_callback,
-                     auto_ack=True)
+                     on_message_callback=msg_callback)
     logger.info("Listening for incoming order")
     ch.start_consuming()            

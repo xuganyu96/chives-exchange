@@ -11,7 +11,7 @@ def main():
 
     if args.subcommand == "start_engine":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
-        start_engine(args.queue_host, sql_engine)
+        start_engine(args.queue_host, sql_engine, args.dry_run)
     if args.subcommand == "initdb":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
         Base.metadata.create_all(sql_engine)

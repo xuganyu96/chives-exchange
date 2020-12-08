@@ -21,6 +21,11 @@ parser_start_engine.add_argument("-s", "--sql-uri",
     help=f"Database URI; defaults to {DEFAULT_SQLALCHEMY_URI}",
     dest="sql_uri",
     default=f"{DEFAULT_SQLALCHEMY_URI}")
+parser_start_engine.add_argument("--dry-run",
+    help="Do not heartbeat the matching engine when a message is received",
+    dest="dry_run",
+    action="store_true",
+    default=False)
 
 # Create the parser for initdb command
 parser_initdb = subparsers.add_parser('initdb', 

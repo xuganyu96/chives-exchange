@@ -13,22 +13,31 @@ docker run -d --rm \
     rabbitmq:3-management
 ```
 
+**NEW!** Use MySQL as a backend database. For local environment, this is most 
+easily achieved with a container:
+```bash
+docker run -d --rm \
+    --name chives-mysql \
+    -e MYSQL_RANDOM_ROOT_PASSWORD="yes" \
+    -e MYSQL_DATABASE="chives" \
+    -e MYSQL_USER="chives_u" \
+    -e MYSQL_PASSWORD="chives_password" \
+    -p 3307:3306 \
+    -p 33061:33060 \
+    mysql:8.0
+```
+
 Both the webserver and the matching engine reads from and writes to a SQL 
 database, which by default is a SQLite located in `/tmp/chives.sqlite`. To 
 initialize the database schema:
 ```bash
-python -m chives initdb
+python -m chives initdb --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 ```
 
 Run the webserver and matching engine in two separate processes. Make sure that 
 the matching engine is not erroring out because of failure to connect to 
 RabbitMQ.
 ```bash
-python -m chives start_engine
-python -m chives webserver
+python -m chives start_engine --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
+python -m chives webserver --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 ```
-
-You can now follow the demo [here](https://xuganyu96.github.io/chives-exchange/) 
-to try it out, or you can run `reset_and_simulate.py` to inject dummy users and 
-trades, then sign-in to `buyer` or `seller` with dummy `password` to explore 
-the UI.
