@@ -44,7 +44,7 @@ def autocomplete_companies():
 def stock_chart_data():
     symbol = request.args['symbol']
     zoom = request.args['zoom'] if "zoom" in request.args else "year"
-    debug = int(request.args['debug']) if "debug" in request.args else 1
+    debug = int(request.args['debug']) if "debug" in request.args else 0
     db = get_db()
 
     # Query all transactions with transaction dttm sorted from earlier to later
