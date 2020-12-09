@@ -1,6 +1,7 @@
 from collections import namedtuple
 import datetime as dt
 from math import floor
+import random
 import typing as ty
 
 from flask import Blueprint, jsonify, request
@@ -13,7 +14,14 @@ from chives.models import Company, Transaction
 CandleStickDataPoint = namedtuple(
     # Respectively: dttm, open, high, low, close
     "CandleStickDataPoint", ["t", "o", "h", "l", "c"])
+ZoomConfig = namedtuple("ZoomConfig", ['cutoff_offset', 'scale_unit', 'agg_tspan'])
 UNIX_START = dt.datetime(1970, 1, 1, 0, 0, 0)
+ZOOM_CONFIGS = {
+    'day': ZoomConfig(dt.timedelta(hours=24), "hour", dt.timedelta(minutes=10)),
+    'month': ZoomConfig(dt.timedelta(days=30), "day", dt.timedelta(hours=6)),
+    'year': ZoomConfig(dt.timedelta(days=365), "month", dt.timedelta(days=1)),
+    'max': ZoomConfig(dt.timedelta(days=3650), "year", dt.timedelta(days=7))
+}
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -36,30 +44,14 @@ def autocomplete_companies():
 def stock_chart_data():
     symbol = request.args['symbol']
     zoom = request.args['zoom'] if "zoom" in request.args else "year"
+    debug = int(request.args['debug']) if "debug" in request.args else 1
     db = get_db()
 
     # Query all transactions with transaction dttm sorted from earlier to later
     tfilter = (Transaction.security_symbol == symbol)
     # Add the dttm filter, which depends on the zoom level
-    cutoff = dt.datetime.utcnow()
-    agg_length = 0
-    scale_unit = "day"
-    if zoom == "day":
-        cutoff -= dt.timedelta(hours=24)
-        agg_length = dt.timedelta(minutes=5)
-        scale_unit = "hour"
-    elif zoom == "month":
-        cutoff -= dt.timedelta(days=30)
-        agg_length = dt.timedelta(days=0.5)
-        scale_unit = "day"
-    elif zoom == "year":
-        cutoff -= dt.timedelta(days=365)
-        agg_length = dt.timedelta(days=1)
-        scale_unit = "month"
-    else:
-        cutoff -= dt.timedelta(days=10*365)
-        agg_length = dt.timedelta(days=7)
-        scale_unit = "year"
+    cutoff = dt.datetime.utcnow() - ZOOM_CONFIGS[zoom].cutoff_offset
+    scale_unit = ZOOM_CONFIGS[zoom].scale_unit
     tfilter = tfilter & (Transaction.transact_dttm >= cutoff)
 
     sort_key = Transaction.transact_dttm.asc()
@@ -67,6 +59,19 @@ def stock_chart_data():
 
     # Convert the set of transactions into a 2 column dataframe: price vs dttm
     df = pd.read_sql(query.statement, db.bind)[['transact_dttm', 'price']]
+    if debug:
+        # If debug is set to True, then return dummy data without reading
+        # from database
+        df = pd.DataFrame({
+            "transact_dttm": [
+                dt.datetime.fromtimestamp(
+                    random.uniform(
+                        cutoff.timestamp(),
+                        dt.datetime.utcnow().timestamp()
+                    )
+                )  for i in range(500)],
+            "price": [random.uniform(10, 100) for i in range(500)]
+        }).sort_values('transact_dttm')
     agg_data_points = aggregate_stock_chart(df, zoom)
     agg_data_points_dict = [{
         "t": dp.t * 1000,
@@ -120,14 +125,7 @@ def aggregate_stock_chart(df: pd.DataFrame,
         return []
     
     assert zoom in ["day", "month", "year", "max"]
-    if zoom == "month":
-        agg_tspan = dt.timedelta(hours=6)
-    elif zoom == "year":
-        agg_tspan = dt.timedelta(days=1)
-    elif zoom == "max":
-        agg_tspan = dt.timedelta(days=7)
-    else:
-        agg_tspan = dt.timedelta(minutes=10)
+    agg_tspan = ZOOM_CONFIGS[zoom].agg_tspan
     
     global_min_transact_ts = df['transact_dttm'].min()
     global_agg_start = (global_min_transact_ts - UNIX_START) // agg_tspan \
