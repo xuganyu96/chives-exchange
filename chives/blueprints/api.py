@@ -62,6 +62,7 @@ def stock_chart_data():
     if debug:
         # If debug is set to True, then return dummy data without reading
         # from database
+        random.seed(10)
         df = pd.DataFrame({
             "transact_dttm": [
                 dt.datetime.fromtimestamp(
