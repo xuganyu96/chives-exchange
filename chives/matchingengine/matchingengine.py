@@ -412,8 +412,7 @@ class MatchingEngine:
         self.session.commit()
 
 
-def start_engine(queue_host: str, sql_engine: SQLEngine, 
-        dry_run: bool = False):
+def start_engine(queue_host: str, sql_engine: SQLEngine, dry_run: bool = False):
     """Initialize a RabbitMQ connection and a matching engine instance, then 
     start listening in for incoming order
 
