@@ -50,9 +50,9 @@
     options: {}
   })
 
-  function redrawChart(chart, companySymbol, zoom){
+  function redrawChart(chart, companySymbol, zoom, debug = 0){
     // Request stock data from the /api/stock_chart_data, then reset the entire chart data 
-    fetchClient.get(`/api/stock_chart_data?symbol=${companySymbol}&zoom=${zoom}`)
+    fetchClient.get(`/api/stock_chart_data?symbol=${companySymbol}&zoom=${zoom}&debug=${debug}`)
     .then(function(resp){
       chart.data = resp.data;
       chart.options = resp.options;
