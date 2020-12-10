@@ -61,3 +61,8 @@ The webserver offers a GUI for users to submit stock orders and do other things.
 python -m chives webserver \
     --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 ```
+
+
+
+### Further readings
+* [Trading for the first time](docs/trading_for_the_first_time.md)

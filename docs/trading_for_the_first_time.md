@@ -1,0 +1,1 @@
+# Trading for the first time
