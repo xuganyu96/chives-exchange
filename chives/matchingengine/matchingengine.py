@@ -184,7 +184,7 @@ class MatchingEngine:
                         f"AON resting order {candidate} rejected {incoming}")
                     return None
             else:
-                # the transaction size will always be the candidate's 
+                # the transaction price will always be the candidate's 
                 # price since by prior filtering, the candidate will 
                 # always have the better pricing
 
@@ -200,46 +200,12 @@ class MatchingEngine:
 
                 return transaction
     
-    def _heartbeat(self, incoming: Order):
-        """Register the incoming order into the main database, run it against 
-        self.match, then commit the changes to main database and/or the 
-        orderbook database
-
-        :param incoming: the incoming order
-        :type incoming: Order
-        """
-        logger.debug("Starting new heartbeat")
-        self.session.close(); time.sleep(0.01)
-        # The canonical way of receiving orders is from order submissions 
-        # from webserver to the order queue, and since the webserver already 
-        # commits the order into the main database, there should not be the 
-        # need to commit to the main database again.
-        # However, for debugging and testing purposes, we allow uncommitted 
-        # Order objects to be entered, hence the logic below for checking 
-        # whether the incoming order is in the main database or not.
-        if (incoming.order_id is None) \
-            or (self.session.query(Order).get(incoming.order_id) is None):
-            logger.debug(f"Received un-committed incoming order {incoming}")
-            self.session.add(incoming)
-            self.session.commit()
-
-        # The self.match method does not commit any actual changes to any 
-        # database. Instead, it returns the set of changes that need to be 
-        # committed.
-        match_result: MatchResult = self.match(incoming)
-
-        # Read self.match's documentation for the fives types of database 
-        # changes that can occur in a match. Here is how to deal with each of 
-        # them:
-        # 
-        # Read the module README for how each type of match result is handled
-        #
+    def process_match_result(self, match_result: MatchResult):
         self.session.merge(match_result.incoming)
         
         if match_result.incoming_remain is not match_result.incoming\
             and match_result.incoming_remain is not None:
             self.session.add(match_result.incoming_remain)
-        
         
         if len(match_result.deactivated) > 0:
             for deactivated in match_result.deactivated:
@@ -310,9 +276,27 @@ class MatchingEngine:
                 refund_size = match_result.incoming_remain.size
                 logger.debug(f"Refunding {refund_size} shares")
                 source_asset.asset_amount += refund_size
+    
+    def _heartbeat(self, incoming: Order):
+        """Register the incoming order into the main database, run it against 
+        self.match, then commit the changes to main database and/or the 
+        orderbook database
+
+        :param incoming: the incoming order
+        :type incoming: Order
+        """
+        logger.debug("Starting new heartbeat")
+        self.session.close(); time.sleep(0.01)
+
+        # The self.match method does not commit any actual changes to any 
+        # database. Instead, it returns the set of changes that need to be 
+        # committed.
+        match_result: MatchResult = self.match(incoming)
+        self.process_match_result(match_result)
         
-        self.session.commit()
         self.log_to_sql(msg=self.heartbeat_finish_msg)
+        # This is the only commit that will happen for each heartbeat
+        self.session.commit()
 
     def heartbeat(self, incoming: Order):
         try:
@@ -409,7 +393,6 @@ class MatchingEngine:
             ext_ref=ext_ref,
             ext_ref_id=ext_ref_id
         ))
-        self.session.commit()
 
 
 def start_engine(queue_host: str, sql_engine: SQLEngine, dry_run: bool = False):
