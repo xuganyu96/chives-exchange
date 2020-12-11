@@ -182,6 +182,7 @@ def _benchmark(sql_session: Session,
     random_prices = [random.uniform(10, 100) for i in range(n_rounds)]
 
     start_dttm = dt.datetime.utcnow()
+    order_messages = []
     for i in range(n_rounds):
         random_size, random_price = random_sizes[i], random_prices[i]
         injected_asset = inject_asset(
@@ -203,10 +204,15 @@ def _benchmark(sql_session: Session,
             owner_id=buyer.user_id,
             immediate_or_cancel=True
         )
+        sql_session.add(ask)
+        sql_session.add(bid)
+        sql_session.commit()
+        order_messages.append(ask.json)
+        order_messages.append(bid.json)
+    
+    for msg in order_messages:
         ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=ask.json)
-        ch.basic_publish(
-            exchange='', routing_key='incoming_order', body=bid.json)
+            exchange='', routing_key='incoming_order', body=msg)
     
     return start_dttm, random_sizes, random_prices
 
