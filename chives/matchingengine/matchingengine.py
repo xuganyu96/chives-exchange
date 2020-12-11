@@ -200,7 +200,111 @@ class MatchingEngine:
 
                 return transaction
     
+    def exchange_user_asset(self, transaction: Transaction):
+        """Given a transaction, find the parties involved in the transaction, 
+        then perform the exchange of cash for stocks as reflected on the assets
+        table
+
+        :param transaction: [description]
+        :type transaction: Transaction
+        """
+        # Identify the seller and the buyer.
+        ask = self.session.query(Order).get(transaction.ask_id)
+        bid = self.session.query(Order).get(transaction.bid_id)
+        seller: User = ask.owner
+        buyer: User = bid.owner
+
+        # Seller gains cash and loses stocks, but the stock share 
+        # deduction happens at order's submission, so we only need 
+        # to be concerned with gaining cash.
+        cash_volume = transaction.price * transaction.size 
+        seller_cash: Asset = self.session.query(Asset).get(
+            (seller.user_id, "_CASH")
+        )
+        seller_cash.asset_amount += cash_volume
+        self.session.merge(seller_cash)
+
+        # Buyer gains stock and loses cash, both of which will 
+        # happen here, since there is no telling what price the 
+        # buyer will get when the buyer places an order.
+        #
+        # First check if the buyer has had this kind of asset before
+        buyer_stock = self.session.query(Asset).get(
+            (buyer.user_id, transaction.security_symbol)
+        )
+        # If the buyer has this kind of asset, then add to it; 
+        # otherwise, create a new entry
+        if buyer_stock is None:
+            self.session.add(
+                Asset(owner_id=buyer.user_id,
+                        asset_symbol=transaction.security_symbol,
+                        asset_amount=transaction.size))
+        else:
+            buyer_stock.asset_amount += transaction.size
+            self.session.merge(buyer_stock)
+        # Remove cash from buyer
+        buyer_cash = self.session.query(Asset).get(
+            (buyer.user_id, "_CASH")
+        )
+        buyer_cash.asset_amount -= cash_volume
+        self.session.merge(buyer_cash)
+
+    def update_market_price(self, transaction: Transaction):
+        """Given a transaction object, find the company that this transaction 
+        is trading on, then update the company's market price with the 
+        transaction price
+
+        :param transaction: [description]
+        :type transaction: Transaction
+        """
+        # Update the company's market price
+        company = self.session.query(Company).get(
+            transaction.security_symbol)
+        company.market_price = transaction.price
+        self.session.merge(company)
+
+    def refund_cancelled_remains(self, match_result: MatchResult):
+        """If the incoming order is a selling order that is not entirely 
+        fulfilled, and whose remaining part is cancelled, then return the 
+        remaining part's assets back to the seller
+
+        :param match_result: [description]
+        :type match_result: MatchResult
+        """
+        if (match_result.incoming.side == "ask") \
+            and match_result.incoming_remain is not None \
+            and (match_result.incoming_remain.cancelled_dttm is not None):
+            owner_id = match_result.incoming_remain.owner_id
+            symbol = match_result.incoming_remain.security_symbol
+            source_asset = self.session.query(Asset).get((owner_id, symbol))
+            refund_size = match_result.incoming_remain.size
+            logger.debug(f"Refunding {refund_size} shares")
+            source_asset.asset_amount += refund_size
+            self.session.merge(source_asset)
+
     def process_match_result(self, match_result: MatchResult):
+        """Write changes described by the match result into the database:
+        1.  incoming_order needs to be merged because it might be cancelled 
+            or be made active
+        2.  incoming_remain, if distinct from incoming_order and not None, 
+            needs to be added into the database as a new order
+        3.  A number of resting orders need to be deactivated because they 
+            matched with the aggressor order and produced transaction
+        4.  If there is a sub-order of a resting order, then it needs to be 
+            added as a new order
+        5.  For each transaction, add it into the database. 
+            If user logic is not to be ignored, then 
+            *   call exchange_user_asset to execute with the exchange of 
+                assets induced by said transaction
+            *   call update_market_price to update a company's stock's market
+                price
+        6.  If user logic is not to be ignored, then refund unfulfilled remains 
+            of the selling order back to the user appropriately
+
+
+        :param match_result: [description]
+        :type match_result: MatchResult
+        """
         self.session.merge(match_result.incoming)
         
         if match_result.incoming_remain is not match_result.incoming\
@@ -219,63 +323,11 @@ class MatchingEngine:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
                 if not self.ignore_user_logic:
-                    # Identify the seller and the buyer.
-                    ask = self.session.query(Order).get(transaction.ask_id)
-                    bid = self.session.query(Order).get(transaction.bid_id)
-                    seller: User = ask.owner
-                    buyer: User = bid.owner
-
-                    # Seller gains cash and loses stocks, but the stock share 
-                    # deduction happens at order's submission, so we only need 
-                    # to be concerned with gaining cash.
-                    cash_volume = transaction.price * transaction.size 
-                    seller_cash: Asset = self.session.query(Asset).get(
-                        (seller.user_id, "_CASH")
-                    )
-                    seller_cash.asset_amount += cash_volume
-
-                    # Buyer gains stock and loses cash, both of which will 
-                    # happen here, since there is no telling what price the 
-                    # buyer will get when the buyer places an order.
-                    #
-                    # First check if the buyer has had this kind of asset before
-                    buyer_stock = self.session.query(Asset).get(
-                        (buyer.user_id, transaction.security_symbol)
-                    )
-                    # If the buyer has this kind of asset, then add to it; 
-                    # otherwise, create a new entry
-                    if buyer_stock is None:
-                        self.session.add(
-                            Asset(owner_id=buyer.user_id,
-                                  asset_symbol=transaction.security_symbol,
-                                  asset_amount=transaction.size))
-                    else:
-                        buyer_stock.asset_amount += transaction.size
-                    # Remove cash from buyer
-                    buyer_cash = self.session.query(Asset).get(
-                        (buyer.user_id, "_CASH")
-                    )
-                    buyer_cash.asset_amount -= cash_volume
-
-                    # Update the company's market price
-                    company = self.session.query(Company).get(
-                        transaction.security_symbol)
-                    company.market_price = transaction.price
+                    self.exchange_user_asset(transaction)
+                    self.update_market_price(transaction)
         
         if not self.ignore_user_logic:
-            # If the incoming order is a selling order that is not 
-            # entirely fulfilled, and whose remaining part is cancelled, 
-            # then return the assets back to the seller
-            if match_result.incoming_remain is not None \
-                and (match_result.incoming_remain.cancelled_dttm is not None) \
-                and (match_result.incoming_remain.side == "ask"):
-                source_asset = self.session.query(Asset).get(
-                    (match_result.incoming_remain.owner_id, 
-                     match_result.incoming_remain.security_symbol)
-                )
-                refund_size = match_result.incoming_remain.size
-                logger.debug(f"Refunding {refund_size} shares")
-                source_asset.asset_amount += refund_size
+            self.refund_cancelled_remains(match_result)
     
     def _heartbeat(self, incoming: Order):
         """Register the incoming order into the main database, run it against 
