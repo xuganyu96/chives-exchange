@@ -34,69 +34,6 @@ class OrderNotFoundError(KeyError):
     pass
 
 
-class OrderBook:
-    """Abstraction of a limit order books that maintains active orders. The 
-    state is maintained in a SQL database, which defaults to a SQLite database 
-    held in memory. Using a SQL database allows graceful exit while preserving 
-    the state. Note that the order book database's ID is consistent with the 
-    main database's ID.
-    """
-
-    def __init__(self, main_db_session: Session):
-        """The main_db_session is most likely going to be passed in by the 
-        matching engine, but for debugging purpose, other sessions can be 
-        passed in, as well
-
-        :param main_db_session: [description]
-        :type main_db_session: Session
-        """
-        self.session = main_db_session
-
-    def get_order(self, order_id: int) -> Order:
-        """Read an order by its order_id
-
-        :param order_id: ID of the order to be obtained
-        :type order_id: int
-        :return: the order instance
-        :rtype: Order
-        """
-        order = self.session.query(Order).get(order_id)
-        if not order:
-            raise OrderNotFoundError(f"Order ID {order_id} cannot be found")
-        else:
-            return order
-    
-    def get_candidates(self, incoming: Order) -> ty.List[Order]:
-        """Given an incoming order, return all active orders of the same 
-        security symbol, that are on the opposite sides, that do not come from 
-        the same owner, and that offer better price than the incoming order, 
-        if the incoming order has a target price
-
-        :param incoming: the incoming order
-        :type incoming: Order
-        :return: A list of candidate orders
-        :rtype: ty.List[Order]
-        """
-        candidates: ty.List[Order] = []
-        cond = (Order.security_symbol == incoming.security_symbol) \
-            & (Order.active == True)
-        if incoming.owner_id:
-            cond = cond & (Order.owner_id != incoming.owner_id)
-        sort_key = None
-        if incoming.side == "bid":
-            cond = cond & (Order.side == "ask")
-            if incoming.price:
-                cond = cond & (Order.price <= incoming.price)
-            sort_key = Order.price.asc()
-        else:
-            cond = cond & (Order.side == "bid")
-            if incoming.price:
-                cond = cond & (Order.price >= incoming.price)
-            sort_key = Order.price.desc()
-        
-        return self.session.query(Order).filter(cond).order_by(sort_key).all()
-
-
 class MatchResult:
         """A dummy class for enforcing a schema for match result
         - incoming is an Order object attached to the main database's session
@@ -142,11 +79,54 @@ class MatchingEngine:
         """
         Session = sessionmaker(bind=me_sql_engine, autoflush=False)
         self.session = Session()
-        self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
         self.hostname = hostname if hostname else socket.gethostname()
         self.pid = os.getpid()
     
+    def get_order(self, order_id: int) -> Order:
+        """Read an order by its order_id
+
+        :param order_id: ID of the order to be obtained
+        :type order_id: int
+        :return: the order instance
+        :rtype: Order
+        """
+        order = self.session.query(Order).get(order_id)
+        if not order:
+            raise OrderNotFoundError(f"Order ID {order_id} cannot be found")
+        else:
+            return order
+
+    def get_candidates(self, incoming: Order) -> ty.List[Order]:
+        """Given an incoming order, return all active orders of the same 
+        security symbol, that are on the opposite sides, that do not come from 
+        the same owner, and that offer better price than the incoming order, 
+        if the incoming order has a target price
+
+        :param incoming: the incoming order
+        :type incoming: Order
+        :return: A list of candidate orders
+        :rtype: ty.List[Order]
+        """
+        candidates: ty.List[Order] = []
+        cond = (Order.security_symbol == incoming.security_symbol) \
+            & (Order.active == True)
+        if incoming.owner_id:
+            cond = cond & (Order.owner_id != incoming.owner_id)
+        sort_key = None
+        if incoming.side == "bid":
+            cond = cond & (Order.side == "ask")
+            if incoming.price:
+                cond = cond & (Order.price <= incoming.price)
+            sort_key = Order.price.asc()
+        else:
+            cond = cond & (Order.side == "bid")
+            if incoming.price:
+                cond = cond & (Order.price >= incoming.price)
+            sort_key = Order.price.desc()
+        
+        return self.session.query(Order).filter(cond).order_by(sort_key).all()
+
     @classmethod 
     def propose_trade(cls, incoming: Order, 
                            candidate: Order) -> ty.Optional[Transaction]:
@@ -369,7 +349,7 @@ class MatchingEngine:
         """
         mr = MatchResult()
         incoming.remaining_size = incoming.size 
-        candidates: ty.List[Order] = self.ob.get_candidates(incoming)
+        candidates: ty.List[Order] = self.get_candidates(incoming)
         logger.debug(f"Found {len(candidates)} resting orders as candidates")
 
         for candidate in candidates:
