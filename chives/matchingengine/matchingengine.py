@@ -301,7 +301,6 @@ class MatchingEngine:
         6.  If user logic is not to be ignored, then refund unfulfilled remains 
             of the selling order back to the user appropriately
 
-
         :param match_result: [description]
         :type match_result: MatchResult
         """
