@@ -1,10 +1,6 @@
 # Order matching procedure 
 The matching engine heartbeats for each time an incoming order message is received, and performs order matching for the incoming order within the heartbeat. There are several major steps in the order matching process:
 
-* [Find matching candidates from resting orders](#finding-matching-candidates)
-* Commit matching results
-* (Optional) Perform user logic
-
 ## Finding matching candidates
 This is implemented in `chives.matchingengine.MatchingEngine.get_candidates`
 
