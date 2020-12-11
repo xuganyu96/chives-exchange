@@ -113,19 +113,20 @@ class MatchingEngine:
             & (Order.active == True)
         if incoming.owner_id:
             cond = cond & (Order.owner_id != incoming.owner_id)
-        sort_key = None
+        best_price = None
         if incoming.side == "bid":
             cond = cond & (Order.side == "ask")
             if incoming.price:
                 cond = cond & (Order.price <= incoming.price)
-            sort_key = Order.price.asc()
+            best_price = Order.price.asc()
         else:
             cond = cond & (Order.side == "bid")
             if incoming.price:
                 cond = cond & (Order.price >= incoming.price)
-            sort_key = Order.price.desc()
+            best_price = Order.price.desc()
         
-        return self.session.query(Order).filter(cond).order_by(sort_key).all()
+        return self.session.query(Order).filter(cond).order_by(
+            best_price, Order.create_dttm.desc()).all()
 
     @classmethod 
     def propose_trade(cls, incoming: Order, 
