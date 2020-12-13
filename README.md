@@ -1,10 +1,20 @@
-# chives-exchange
-Implementation of a stock exchange with matching engine and a web UI powered by 
-Flask.
+# Chives Exchange 
+`chives-exchange` is an implementation of an electronic stock exchange that contains a horizontally scalable matching engine and a web UI.
 
 ## Getting started
-The webserver communicates to the matching engine through RabbitMQ, which can be 
-most easily run using docker:
+Chives exchange can be installed from pypi:
+```
+pip install chives-exchange
+```
+
+There are four main components of this implementation of stock exchange:
+* Message queue
+* SQL database 
+* Matching engine(s)
+* Webserver (optional)
+
+### Message queue
+Begin by starting a message queue server, which is the channel through which stock orders are picked up by matching engine(s) to match with resting orders in the orderbook and produce trades. The current implementation only supports RabbitMQ, which can be most easily run using a container:
 ```bash
 docker run -d --rm \
     --name "rabbitmq" \
@@ -13,8 +23,10 @@ docker run -d --rm \
     rabbitmq:3-management
 ```
 
-**NEW!** Use MySQL as a backend database. For local environment, this is most 
-easily achieved with a container:
+### Database
+Chives exchange supports SQLite and MySQL as the backend database (other SQL databases might work; I just have not tested them). SQLite is a good choice for development, but won't allow multiple matching engines to be running at the same time; therefore, it is highly recommended that MySQL be used, which can be most easily accomplished through a container.
+
+The `docker run` command below can be modified to use the username/password/database combination of your choice, just note that you will need them for the URI string later for the various commands.
 ```bash
 docker run -d --rm \
     --name chives-mysql \
@@ -27,17 +39,30 @@ docker run -d --rm \
     mysql:8.0
 ```
 
-Both the webserver and the matching engine reads from and writes to a SQL 
-database, which by default is a SQLite located in `/tmp/chives.sqlite`. To 
-initialize the database schema:
+After MySQL finished initializing, create the databases schemas by running the `initdb` command from the `chives` CLI:
+
 ```bash
-python -m chives initdb --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
+python -m chives -v initdb \
+    --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 ```
 
-Run the webserver and matching engine in two separate processes. Make sure that 
-the matching engine is not erroring out because of failure to connect to 
-RabbitMQ.
+The `-v` flag will set the SQLAlchemy engine to echo MySQL's response. It is optional but helpful as a first time to see what tables are created.
+
+### Matching engine and webserver
+Start an instance of a matching engine by calling `start_engine` and passing in the same SQL URI string as before:
 ```bash
-python -m chives start_engine --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
-python -m chives webserver --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
+python -m chives start_engine \
+    --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
 ```
+The matching engine will try to connect to the database and the message queue as soon as it starts; if the message queue or the database is not available, the matching engine will crash immediately. If the database is available, but the table schemas are not initialized, then the matching engine will crash when it starts processing stock orders.
+
+The webserver offers a GUI for users to submit stock orders and do other things. It runs as a Flask application, and is started by calling `webserver`:
+```bash
+python -m chives webserver \
+    --sql-uri "mysql+pymysql://chives_u:chives_password@localhost:3307/chives"
+```
+
+
+
+### Further readings
+* [Trading for the first time](docs/trading_for_the_first_time.md)

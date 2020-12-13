@@ -34,69 +34,6 @@ class OrderNotFoundError(KeyError):
     pass
 
 
-class OrderBook:
-    """Abstraction of a limit order books that maintains active orders. The 
-    state is maintained in a SQL database, which defaults to a SQLite database 
-    held in memory. Using a SQL database allows graceful exit while preserving 
-    the state. Note that the order book database's ID is consistent with the 
-    main database's ID.
-    """
-
-    def __init__(self, main_db_session: Session):
-        """The main_db_session is most likely going to be passed in by the 
-        matching engine, but for debugging purpose, other sessions can be 
-        passed in, as well
-
-        :param main_db_session: [description]
-        :type main_db_session: Session
-        """
-        self.session = main_db_session
-
-    def get_order(self, order_id: int) -> Order:
-        """Read an order by its order_id
-
-        :param order_id: ID of the order to be obtained
-        :type order_id: int
-        :return: the order instance
-        :rtype: Order
-        """
-        order = self.session.query(Order).get(order_id)
-        if not order:
-            raise OrderNotFoundError(f"Order ID {order_id} cannot be found")
-        else:
-            return order
-    
-    def get_candidates(self, incoming: Order) -> ty.List[Order]:
-        """Given an incoming order, return all active orders of the same 
-        security symbol, that are on the opposite sides, that do not come from 
-        the same owner, and that offer better price than the incoming order, 
-        if the incoming order has a target price
-
-        :param incoming: the incoming order
-        :type incoming: Order
-        :return: A list of candidate orders
-        :rtype: ty.List[Order]
-        """
-        candidates: ty.List[Order] = []
-        cond = (Order.security_symbol == incoming.security_symbol) \
-            & (Order.active == True)
-        if incoming.owner_id:
-            cond = cond & (Order.owner_id != incoming.owner_id)
-        sort_key = None
-        if incoming.side == "bid":
-            cond = cond & (Order.side == "ask")
-            if incoming.price:
-                cond = cond & (Order.price <= incoming.price)
-            sort_key = Order.price.asc()
-        else:
-            cond = cond & (Order.side == "bid")
-            if incoming.price:
-                cond = cond & (Order.price >= incoming.price)
-            sort_key = Order.price.desc()
-        
-        return self.session.query(Order).filter(cond).order_by(sort_key).all()
-
-
 class MatchResult:
         """A dummy class for enforcing a schema for match result
         - incoming is an Order object attached to the main database's session
@@ -142,11 +79,55 @@ class MatchingEngine:
         """
         Session = sessionmaker(bind=me_sql_engine, autoflush=False)
         self.session = Session()
-        self.ob = OrderBook(self.session)
         self.ignore_user_logic = ignore_user_logic
         self.hostname = hostname if hostname else socket.gethostname()
         self.pid = os.getpid()
     
+    def get_order(self, order_id: int) -> Order:
+        """Read an order by its order_id
+
+        :param order_id: ID of the order to be obtained
+        :type order_id: int
+        :return: the order instance
+        :rtype: Order
+        """
+        order = self.session.query(Order).get(order_id)
+        if not order:
+            raise OrderNotFoundError(f"Order ID {order_id} cannot be found")
+        else:
+            return order
+
+    def get_candidates(self, incoming: Order) -> ty.List[Order]:
+        """Given an incoming order, return all active orders of the same 
+        security symbol, that are on the opposite sides, that do not come from 
+        the same owner, and that offer better price than the incoming order, 
+        if the incoming order has a target price
+
+        :param incoming: the incoming order
+        :type incoming: Order
+        :return: A list of candidate orders
+        :rtype: ty.List[Order]
+        """
+        candidates: ty.List[Order] = []
+        cond = (Order.security_symbol == incoming.security_symbol) \
+            & (Order.active == True)
+        if incoming.owner_id:
+            cond = cond & (Order.owner_id != incoming.owner_id)
+        best_price = None
+        if incoming.side == "bid":
+            cond = cond & (Order.side == "ask")
+            if incoming.price:
+                cond = cond & (Order.price <= incoming.price)
+            best_price = Order.price.asc()
+        else:
+            cond = cond & (Order.side == "bid")
+            if incoming.price:
+                cond = cond & (Order.price >= incoming.price)
+            best_price = Order.price.desc()
+        
+        return self.session.query(Order).filter(cond).order_by(
+            best_price, Order.create_dttm.desc()).all()
+
     @classmethod 
     def propose_trade(cls, incoming: Order, 
                            candidate: Order) -> ty.Optional[Transaction]:
@@ -184,7 +165,7 @@ class MatchingEngine:
                         f"AON resting order {candidate} rejected {incoming}")
                     return None
             else:
-                # the transaction size will always be the candidate's 
+                # the transaction price will always be the candidate's 
                 # price since by prior filtering, the candidate will 
                 # always have the better pricing
 
@@ -200,46 +181,115 @@ class MatchingEngine:
 
                 return transaction
     
-    def _heartbeat(self, incoming: Order):
-        """Register the incoming order into the main database, run it against 
-        self.match, then commit the changes to main database and/or the 
-        orderbook database
+    def exchange_user_asset(self, transaction: Transaction):
+        """Given a transaction, find the parties involved in the transaction, 
+        then perform the exchange of cash for stocks as reflected on the assets
+        table
 
-        :param incoming: the incoming order
-        :type incoming: Order
+        :param transaction: [description]
+        :type transaction: Transaction
         """
-        logger.debug("Starting new heartbeat")
-        self.session.close(); time.sleep(0.01)
-        # The canonical way of receiving orders is from order submissions 
-        # from webserver to the order queue, and since the webserver already 
-        # commits the order into the main database, there should not be the 
-        # need to commit to the main database again.
-        # However, for debugging and testing purposes, we allow uncommitted 
-        # Order objects to be entered, hence the logic below for checking 
-        # whether the incoming order is in the main database or not.
-        if (incoming.order_id is None) \
-            or (self.session.query(Order).get(incoming.order_id) is None):
-            logger.debug(f"Received un-committed incoming order {incoming}")
-            self.session.add(incoming)
-            self.session.commit()
+        # Identify the seller and the buyer.
+        ask = self.session.query(Order).get(transaction.ask_id)
+        bid = self.session.query(Order).get(transaction.bid_id)
+        seller: User = ask.owner
+        buyer: User = bid.owner
 
-        # The self.match method does not commit any actual changes to any 
-        # database. Instead, it returns the set of changes that need to be 
-        # committed.
-        match_result: MatchResult = self.match(incoming)
+        # Seller gains cash and loses stocks, but the stock share 
+        # deduction happens at order's submission, so we only need 
+        # to be concerned with gaining cash.
+        cash_volume = transaction.price * transaction.size 
+        seller_cash: Asset = self.session.query(Asset).get(
+            (seller.user_id, "_CASH")
+        )
+        seller_cash.asset_amount += cash_volume
+        self.session.merge(seller_cash)
 
-        # Read self.match's documentation for the fives types of database 
-        # changes that can occur in a match. Here is how to deal with each of 
-        # them:
-        # 
-        # Read the module README for how each type of match result is handled
+        # Buyer gains stock and loses cash, both of which will 
+        # happen here, since there is no telling what price the 
+        # buyer will get when the buyer places an order.
         #
+        # First check if the buyer has had this kind of asset before
+        buyer_stock = self.session.query(Asset).get(
+            (buyer.user_id, transaction.security_symbol)
+        )
+        # If the buyer has this kind of asset, then add to it; 
+        # otherwise, create a new entry
+        if buyer_stock is None:
+            self.session.add(
+                Asset(owner_id=buyer.user_id,
+                        asset_symbol=transaction.security_symbol,
+                        asset_amount=transaction.size))
+        else:
+            buyer_stock.asset_amount += transaction.size
+            self.session.merge(buyer_stock)
+        # Remove cash from buyer
+        buyer_cash = self.session.query(Asset).get(
+            (buyer.user_id, "_CASH")
+        )
+        buyer_cash.asset_amount -= cash_volume
+        self.session.merge(buyer_cash)
+
+    def update_market_price(self, transaction: Transaction):
+        """Given a transaction object, find the company that this transaction 
+        is trading on, then update the company's market price with the 
+        transaction price
+
+        :param transaction: [description]
+        :type transaction: Transaction
+        """
+        # Update the company's market price
+        company = self.session.query(Company).get(
+            transaction.security_symbol)
+        company.market_price = transaction.price
+        self.session.merge(company)
+
+    def refund_cancelled_remains(self, match_result: MatchResult):
+        """If the incoming order is a selling order that is not entirely 
+        fulfilled, and whose remaining part is cancelled, then return the 
+        remaining part's assets back to the seller
+
+        :param match_result: [description]
+        :type match_result: MatchResult
+        """
+        if (match_result.incoming.side == "ask") \
+            and match_result.incoming_remain is not None \
+            and (match_result.incoming_remain.cancelled_dttm is not None):
+            owner_id = match_result.incoming_remain.owner_id
+            symbol = match_result.incoming_remain.security_symbol
+            source_asset = self.session.query(Asset).get((owner_id, symbol))
+            refund_size = match_result.incoming_remain.size
+            logger.debug(f"Refunding {refund_size} shares")
+            source_asset.asset_amount += refund_size
+            self.session.merge(source_asset)
+
+    def process_match_result(self, match_result: MatchResult):
+        """Write changes described by the match result into the database:
+        1.  incoming_order needs to be merged because it might be cancelled 
+            or be made active
+        2.  incoming_remain, if distinct from incoming_order and not None, 
+            needs to be added into the database as a new order
+        3.  A number of resting orders need to be deactivated because they 
+            matched with the aggressor order and produced transaction
+        4.  If there is a sub-order of a resting order, then it needs to be 
+            added as a new order
+        5.  For each transaction, add it into the database. 
+            If user logic is not to be ignored, then 
+            *   call exchange_user_asset to execute with the exchange of 
+                assets induced by said transaction
+            *   call update_market_price to update a company's stock's market
+                price
+        6.  If user logic is not to be ignored, then refund unfulfilled remains 
+            of the selling order back to the user appropriately
+
+        :param match_result: [description]
+        :type match_result: MatchResult
+        """
         self.session.merge(match_result.incoming)
         
         if match_result.incoming_remain is not match_result.incoming\
             and match_result.incoming_remain is not None:
             self.session.add(match_result.incoming_remain)
-        
         
         if len(match_result.deactivated) > 0:
             for deactivated in match_result.deactivated:
@@ -253,66 +303,32 @@ class MatchingEngine:
             for transaction in match_result.transactions:
                 self.session.add(transaction)
                 if not self.ignore_user_logic:
-                    # Identify the seller and the buyer.
-                    ask = self.session.query(Order).get(transaction.ask_id)
-                    bid = self.session.query(Order).get(transaction.bid_id)
-                    seller: User = ask.owner
-                    buyer: User = bid.owner
-
-                    # Seller gains cash and loses stocks, but the stock share 
-                    # deduction happens at order's submission, so we only need 
-                    # to be concerned with gaining cash.
-                    cash_volume = transaction.price * transaction.size 
-                    seller_cash: Asset = self.session.query(Asset).get(
-                        (seller.user_id, "_CASH")
-                    )
-                    seller_cash.asset_amount += cash_volume
-
-                    # Buyer gains stock and loses cash, both of which will 
-                    # happen here, since there is no telling what price the 
-                    # buyer will get when the buyer places an order.
-                    #
-                    # First check if the buyer has had this kind of asset before
-                    buyer_stock = self.session.query(Asset).get(
-                        (buyer.user_id, transaction.security_symbol)
-                    )
-                    # If the buyer has this kind of asset, then add to it; 
-                    # otherwise, create a new entry
-                    if buyer_stock is None:
-                        self.session.add(
-                            Asset(owner_id=buyer.user_id,
-                                  asset_symbol=transaction.security_symbol,
-                                  asset_amount=transaction.size))
-                    else:
-                        buyer_stock.asset_amount += transaction.size
-                    # Remove cash from buyer
-                    buyer_cash = self.session.query(Asset).get(
-                        (buyer.user_id, "_CASH")
-                    )
-                    buyer_cash.asset_amount -= cash_volume
-
-                    # Update the company's market price
-                    company = self.session.query(Company).get(
-                        transaction.security_symbol)
-                    company.market_price = transaction.price
+                    self.exchange_user_asset(transaction)
+                    self.update_market_price(transaction)
         
         if not self.ignore_user_logic:
-            # If the incoming order is a selling order that is not 
-            # entirely fulfilled, and whose remaining part is cancelled, 
-            # then return the assets back to the seller
-            if match_result.incoming_remain is not None \
-                and (match_result.incoming_remain.cancelled_dttm is not None) \
-                and (match_result.incoming_remain.side == "ask"):
-                source_asset = self.session.query(Asset).get(
-                    (match_result.incoming_remain.owner_id, 
-                     match_result.incoming_remain.security_symbol)
-                )
-                refund_size = match_result.incoming_remain.size
-                logger.debug(f"Refunding {refund_size} shares")
-                source_asset.asset_amount += refund_size
+            self.refund_cancelled_remains(match_result)
+    
+    def _heartbeat(self, incoming: Order):
+        """Register the incoming order into the main database, run it against 
+        self.match, then commit the changes to main database and/or the 
+        orderbook database
+
+        :param incoming: the incoming order
+        :type incoming: Order
+        """
+        logger.debug("Starting new heartbeat")
+        self.session.close(); time.sleep(0.01)
+
+        # The self.match method does not commit any actual changes to any 
+        # database. Instead, it returns the set of changes that need to be 
+        # committed.
+        match_result: MatchResult = self.match(incoming)
+        self.process_match_result(match_result)
         
-        self.session.commit()
         self.log_to_sql(msg=self.heartbeat_finish_msg)
+        # This is the only commit that will happen for each heartbeat
+        self.session.commit()
 
     def heartbeat(self, incoming: Order):
         try:
@@ -334,7 +350,7 @@ class MatchingEngine:
         """
         mr = MatchResult()
         incoming.remaining_size = incoming.size 
-        candidates: ty.List[Order] = self.ob.get_candidates(incoming)
+        candidates: ty.List[Order] = self.get_candidates(incoming)
         logger.debug(f"Found {len(candidates)} resting orders as candidates")
 
         for candidate in candidates:
@@ -409,7 +425,6 @@ class MatchingEngine:
             ext_ref=ext_ref,
             ext_ref_id=ext_ref_id
         ))
-        self.session.commit()
 
 
 def start_engine(queue_host: str, sql_engine: SQLEngine, dry_run: bool = False):

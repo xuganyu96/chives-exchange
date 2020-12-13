@@ -38,6 +38,7 @@ def test_aon_incoming(sql_engine: SQLEngine, matching_engine: MatchingEngine):
                 all_or_none=True)
     ]
     for test_order in test_orders:
+        me.session.add(test_order); me.session.commit()
         me.heartbeat(incoming=test_order)
     
     # Order 1 is first entered into the order book
@@ -67,6 +68,7 @@ def test_aon_candidate(sql_engine: SQLEngine, matching_engine: MatchingEngine):
         Order(order_id=3, security_symbol="X", side="bid", size=120, price=3)
     ]
     for test_order in test_orders:
+        me.session.add(test_order); me.session.commit()
         me.heartbeat(incoming=test_order)
     
     # Order 1 and 2 are first entered into order book
@@ -99,6 +101,7 @@ def test_ioc_incoming(sql_engine: SQLEngine, matching_engine: MatchingEngine):
                 immediate_or_cancel=True)
     ]
     for test_order in test_orders:
+        me.session.add(test_order); me.session.commit()
         me.heartbeat(incoming=test_order)
 
     # order 1 is first entered into order book
@@ -136,6 +139,7 @@ def test_market_order(sql_engine: SQLEngine, matching_engine: MatchingEngine):
                 immediate_or_cancel=True)
     ]
     for test_order in test_orders:
+        me.session.add(test_order); me.session.commit()
         me.heartbeat(incoming=test_order)
     
     # Order 1 is first entered into order book
@@ -174,6 +178,7 @@ def test_simple_static_orders(sql_engine: SQLEngine, matching_engine: MatchingEn
         Order(order_id=2, security_symbol="X", side="ask", size=100, price=99),
         Order(order_id=3, security_symbol="X", side="bid", size=120, price=101)]
     for static_order in static_orders:
+        me.session.add(static_order); me.session.commit()
         me.heartbeat(incoming=static_order)
     
     # Check at the end of the session that the active orders, the transactions, 
