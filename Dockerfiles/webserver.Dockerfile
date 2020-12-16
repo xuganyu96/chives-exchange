@@ -23,4 +23,4 @@ USER chives
 WORKDIR /home/chives
 COPY deploy/wsgi.py /home/chives/wsgi.py
 
-ENTRYPOINT ["uwsgi", "--socket", "0.0.0.0:5000", "--protocol", "http", "-w", "wsgi:app"]
+ENTRYPOINT ["uwsgi", "--socket", "0.0.0.0:5000", "--protocol", "uwsgi", "-w", "wsgi:app"]
