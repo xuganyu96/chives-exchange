@@ -17,10 +17,12 @@ RUN apt-get update \
     && mkdir /home/chives \
     && chown -R chives /home/chives \
     && pip install chives-exchange==${CHIVES_VERSION} uwsgi
-
+COPY deploy/wsgi.py /home/chives/wsgi.py
+COPY deploy/webserver.env.conf /home/chives/env.conf
+COPY deploy/webserver.entrypoint.sh /home/chives/entrypoint.sh
+RUN chmod a+x /home/chives/entrypoint.sh
 EXPOSE 5000
+
 USER chives
 WORKDIR /home/chives
-COPY deploy/wsgi.py /home/chives/wsgi.py
-
-ENTRYPOINT ["uwsgi", "--socket", "0.0.0.0:5000", "--protocol", "uwsgi", "-w", "wsgi:app"]
+ENTRYPOINT ["/home/chives/entrypoint.sh"]
