@@ -14,9 +14,7 @@ from chives.forms import OrderSubmitForm, StartCompanyForm
 from chives.models import Order, Asset, Company, Transaction, User
 
 logger = logging.getLogger("chives.webserver")
-logger.setLevel(logging.DEBUG)
 chandle = logging.StreamHandler()
-chandle.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
     '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
 chandle.setFormatter(formatter)

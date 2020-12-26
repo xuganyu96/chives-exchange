@@ -18,9 +18,7 @@ from chives.models import (
 # I am not adding file handler because at deployment, I will use an orchestrator 
 # to log console output to a file
 logger = logging.getLogger("chives.matchingengine")
-logger.setLevel(logging.INFO)
 chandle = logging.StreamHandler()
-chandle.setLevel(logging.INFO)
 formatter = logging.Formatter(
     '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
 chandle.setFormatter(formatter)
