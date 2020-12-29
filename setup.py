@@ -26,7 +26,8 @@ setup(
         "pytest==6.1.2",
         "requests==2.24.0",
         "SQLAlchemy==1.3.20"
-
+        # uwsgi should be used for deployment, but is not an actual requirement
+        # of the library, and is thus not included.
     ],
     entry_points={
         'console_scripts': ['chives=chives.__main__:main']
