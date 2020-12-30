@@ -25,12 +25,13 @@ Base = declarative_base()
 
 def get_db():
     if 'db_session' not in g:
-        database_uri = current_app.config['DATABASE_URI']
-        engine = create_engine(database_uri)
+        engine = create_engine(
+            current_app.config['SQLALCHEMY_CONN'], 
+            echo=current_app.config['SQLALCHEMY_ECHO'])
         Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         g.db_session = scoped_session(
             Session, scopefunc=_app_ctx_stack.__ident_func__)
-        logger.debug(f"Spawned scoped session for webserver: {database_uri}")
+        logger.debug(f"Spawned scoped session for webserver")
     return g.db_session
 
 def close_db(e=None):
@@ -48,8 +49,14 @@ def get_mq() -> pika.BlockingConnection:
     :rtype: pika.BlockingConnection
     """
     if 'mq_conn' not in g:
-        g.mq_conn = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
+        app_config = current_app.config
+        mq_creds = pika.PlainCredentials(
+            app_config['RABBITMQ_LOGIN'], app_config['RABBITMQ_PASSWORD'])
+        mq_conn_params = pika.ConnectionParameters(
+            app_config['RABBITMQ_HOST'], app_config['RABBITMQ_PORT'], 
+            app_config['RABBITMQ_VHOST'], mq_creds
+        )
+        g.mq_conn = pika.BlockingConnection(mq_conn_params)
         logger.debug(f"Spawned RabbitMQ connection")
     return g.mq_conn
 

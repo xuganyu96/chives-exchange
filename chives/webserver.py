@@ -7,28 +7,30 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from chives.models import Base, Order, Transaction
+from chives.configs import environment_overwrite, DEFAULT_CONFIG
 
 
 login_manager = LoginManager()
 
-def create_app(test_config = None) -> Flask:
+def create_app(config_overwrite: ty.Optional[ty.Dict] = None) -> Flask:
     """Create and configure the application
 
-    :param test_config: [description], defaults to None
-    :type test_config: [type], optional
+    :param config_overwrite: [description], defaults to None
+    :type config_overwrite: [type], optional
     :return: a Flask application
     :rtype: Flask
     """
-    # Note that __name__ evaluates to chives in this instance
-    app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY='dev'
-    )
+    # rc is short for runtime configuration
+    rc = environment_overwrite(DEFAULT_CONFIG)
+    rc.update(config_overwrite)
 
-    if test_config is None:
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        app.config.from_mapping(test_config) 
+    # Create database schema if it doesn't exist
+    sql_engine = create_engine(rc['SQLALCHEMY_CONN'])
+    Base.metadata.create_all(sql_engine, checkfirst=True)
+
+    # Create the application and set the runtime configuration
+    app = Flask(__name__, instance_relative_config=True)
+    app.config.from_mapping(rc)
 
     try:
         os.makedirs(app.instance_path)

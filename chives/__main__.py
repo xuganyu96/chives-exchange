@@ -22,7 +22,10 @@ def main():
         # Obtain the agruments that form the application configuration, then 
         # pass the configuration into the app factory before running the app
         sql_uri = args.sql_uri
-        config={"DATABASE_URI": sql_uri}
+        config={
+            "SQLALCHEMY_CONN": args.sql_uri,
+            "SQLALCHEMY_ECHO": args.verbose
+        }
         
         app = create_app(config)
         app.run(port=args.webserver_port, debug=args.debug)
