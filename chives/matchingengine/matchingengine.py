@@ -23,6 +23,7 @@ chandle = logging.StreamHandler()
 formatter = logging.Formatter(
     '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
 chandle.setFormatter(formatter)
+logger.setLevel(logging.INFO)
 logger.addHandler(chandle)
 
 
@@ -434,7 +435,7 @@ def start_engine(config: ty.Optional[ty.Dict] = None):
     :type config: dict
     """
     # rc is short for runtime configuration
-    rc = environment_overwrite(config)
+    rc = environment_overwrite(DEFAULT_CONFIG)
     rc.update(config)
 
     logger.info("Starting matching engine")
