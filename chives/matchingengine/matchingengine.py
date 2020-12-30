@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine as SQLEngine
 from sqlalchemy.orm import sessionmaker, Session
 
+from chives.configs import DEFAULT_CONFIG, environment_overwrite
 from chives.models import (
     Base, Order, Transaction, Asset, User, Company, MatchingEngineLog)
 
@@ -425,40 +426,50 @@ class MatchingEngine:
         ))
 
 
-def start_engine(queue_host: str, sql_engine: SQLEngine, dry_run: bool = False):
-    """Initialize a RabbitMQ connection and a matching engine instance, then 
-    start listening in for incoming order
+def start_engine(config: ty.Optional[ty.Dict] = None):
+    """Obtain the final runtime configuration, then use it to spawn the 
+    necessary components and start listening for incoming messages
 
-    :param queue_host: hostname of the RabbitMQ server
-    :type queue_host: str
-    :param sql_engine: an SQLAlchemy engine that the matching engine uses to 
-    construct the ORM session
-    :type sql_engine: SQLEngine
-    :param dry_run: if True, the matching engine will not heartbeat upon 
-    receiving the incoming message, defaults to False
-    :type dry_run: bool, optional
+    :param config: overwriting runtime configuration
+    :type config: dict
     """
+    # rc is short for runtime configuration
+    rc = environment_overwrite(config)
+    rc.update(config)
+
     logger.info("Starting matching engine")
 
-    conn = pika.BlockingConnection(pika.ConnectionParameters(host=queue_host))
-    ch = conn.channel()
-    ch.queue_declare(queue="incoming_order")
+    # Connect to RabbitMQ
+    mq_creds = pika.PlainCredentials(
+        rc['RABBITMQ_LOGIN'], rc['RABBITMQ_PASSWORD'])
+    mq_conn_params = pika.ConnectionParameters(
+        rc['RABBITMQ_HOST'], rc['RABBITMQ_PORT'], rc['RABBITMQ_VHOST'], mq_creds
+    )
+    mq_conn = pika.BlockingConnection(mq_conn_params)
+    mq_ch = mq_conn.channel()
+    mq_ch.queue_declare(queue="incoming_order")
     logger.info("Connected to RabbitMQ")
     
+    # Connect to SQL and try to initialize schema if it does not exists already
+    sql_engine = create_engine(
+        rc['SQLALCHEMY_CONN'], echo=rc['SQLALCHEMY_ECHO'])
+    Base.metadata.create_all(sql_engine, checkfirst=True)
+
+    # Create the engine object
     me = MatchingEngine(sql_engine)
     logger.info(f"Matching engine started at {me.hostname} with pid {me.pid}")
 
     def msg_callback(ch, method, properties, body):
         logger.info("Received %r" % body)
-        if not dry_run:
+        if not rc['MATCHING_ENGINE_DRY_RUN']:
             me.heartbeat(Order.from_json(body))
         ch.basic_ack(delivery_tag=method.delivery_tag)
     
     # Tells RabbitMQ not to give more than one message at a time;
     # do not dispatch a new message to a worker until it has processed and 
     # acknowledged the previous one
-    ch.basic_qos(prefetch_count=1) 
-    ch.basic_consume(queue="incoming_order", 
+    mq_ch.basic_qos(prefetch_count=1) 
+    mq_ch.basic_consume(queue="incoming_order", 
                      on_message_callback=msg_callback)
     logger.info("Listening for incoming order")
-    ch.start_consuming()            
+    mq_ch.start_consuming()            
