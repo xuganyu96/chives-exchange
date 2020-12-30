@@ -1,5 +1,6 @@
 DEFAULT_CONFIG = {
     "SQLALCHEMY_CONN": "sqlite:////tmp/chives.sqlite",
+    "SQLALCHEMY_ECHO": False,
     "RABBITMQ_HOST": "localhost",
     "RABBITMQ_PORT": 5672,
     "RABBITMQ_VHOST": "/",

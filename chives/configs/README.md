@@ -6,6 +6,7 @@ All configurations have a default values, which will be the ultimate fallback if
 ## Configuration options
 |config name|config value type|notes|
 |`SQLALCHEMY_CONN`|String|The URI used to connect to the database|
+|`SQLALCHEMY_ECHO`|Boolean|Whether the SQLAlchemy engine will echo|
 |`RABBITMQ_HOST`|String|Hostname of the RabbitMQ server|
 |`RABBITMQ_PORT`|Integer|Port of the RabbitMQ server|
 |`RABBITMQ_VHOST`|String|Virtual host of the RabbitMQ server|
