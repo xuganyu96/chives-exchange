@@ -13,6 +13,7 @@ All configurations have a default values, which will be the ultimate fallback if
 |`RABBITMQ_LOGIN`|String|Username of the RabbitMQ server|
 |`RABBITMQ_PASSWORD`|String|Password of the RabbitMQ server|
 |`MATCHING_ENGINE_DRY_RUN`|Boolean|True if and only if matching engine does not heartbeat upon receiving message|
+|`SECRET_KEY`|String|The Flask application's secret key|
 
 ## Configuration priorities
 There are three sources of configurations: the default configuration in `chives.configs.default_config`, environment variables, argument input. Environment variables will overwrite default config, and argument input will overwrite everything.

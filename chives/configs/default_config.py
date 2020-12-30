@@ -6,5 +6,6 @@ DEFAULT_CONFIG = {
     "RABBITMQ_VHOST": "/",
     "RABBITMQ_LOGIN": "guest",
     "RABBITMQ_PASSWORD": "guest",
-    "MATCHING_ENGINE_DRY_RUN": False
+    "MATCHING_ENGINE_DRY_RUN": False,
+    "SECRET_KEY": "dev"
 }
