@@ -11,7 +11,10 @@ def main():
 
     if args.subcommand == "start_engine":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
-        start_engine(args.queue_host, sql_engine, args.dry_run)
+        start_engine({
+            "SQLALCHEMY_CONN": args.sql_uri,
+            "SQLALCHEMY_ECHO": args.verbose
+        })
     if args.subcommand == "initdb":
         sql_engine = create_engine(args.sql_uri, echo=args.verbose)
         Base.metadata.create_all(sql_engine)
