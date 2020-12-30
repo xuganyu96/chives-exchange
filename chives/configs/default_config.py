@@ -4,5 +4,6 @@ DEFAULT_CONFIG = {
     "RABBITMQ_PORT": 5672,
     "RABBITMQ_VHOST": "/",
     "RABBITMQ_LOGIN": "guest",
-    "RABBITMQ_PASSWORD": "guest"
+    "RABBITMQ_PASSWORD": "guest",
+    "MATCHING_ENGINE_DRY_RUN": False
 }
