@@ -427,16 +427,16 @@ class MatchingEngine:
         ))
 
 
-def start_engine(config: ty.Optional[ty.Dict] = None):
+def start_engine(config_overwrite: ty.Optional[ty.Dict] = None):
     """Obtain the final runtime configuration, then use it to spawn the 
     necessary components and start listening for incoming messages
 
-    :param config: overwriting runtime configuration
-    :type config: dict
+    :param config_overwrite: overwriting runtime configuration
+    :type config_overwrite: dict
     """
     # rc is short for runtime configuration
     rc = environment_overwrite(DEFAULT_CONFIG)
-    rc.update(config)
+    rc.update(config_overwrite)
 
     logger.info("Starting matching engine")
 
