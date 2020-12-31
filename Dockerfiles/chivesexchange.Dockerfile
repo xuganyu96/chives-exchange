@@ -1,6 +1,6 @@
 FROM python:3.8-buster
 
-ENV CHIVES_VERSION='0.2.2'
+ENV CHIVES_VERSION='0.2.3'
 
 # System-wide dependencies, including chives-exchange library and uwsgi
 RUN apt-get update \
