@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# $1 is the argument passed in through docker command
 echo $1
 
 case "$1" in
