@@ -22,7 +22,8 @@ def create_app(config_overwrite: ty.Optional[ty.Dict] = None) -> Flask:
     """
     # rc is short for runtime configuration
     rc = environment_overwrite(DEFAULT_CONFIG)
-    rc.update(config_overwrite)
+    if config_overwrite:
+        rc.update(config_overwrite)
 
     # Create database schema if it doesn't exist
     sql_engine = create_engine(rc['SQLALCHEMY_CONN'])
