@@ -436,7 +436,8 @@ def start_engine(config_overwrite: ty.Optional[ty.Dict] = None):
     """
     # rc is short for runtime configuration
     rc = environment_overwrite(DEFAULT_CONFIG)
-    rc.update(config_overwrite)
+    if config_overwrite:
+        rc.update(config_overwrite)
 
     logger.info("Starting matching engine")
 
