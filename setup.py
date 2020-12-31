@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="chives-exchange",
-    version="0.2.1",
+    version="0.2.2",
     description="Stock exchange with a matching engine and webserver",
     long_description=README,
     long_description_content_type="text/markdown",
