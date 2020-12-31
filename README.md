@@ -1,6 +1,8 @@
 # Chives Exchange 
 `chives-exchange` is an implementation of an electronic stock exchange that contains a horizontally scalable matching engine and a web UI.
 
+Update 0.2.1: `chives.webserver.create_app` and `chives.matchingengine.start_engine` now takes configuration dictionary instead of individual arguments
+
 ## Getting started
 Chives exchange can be installed from pypi:
 ```
