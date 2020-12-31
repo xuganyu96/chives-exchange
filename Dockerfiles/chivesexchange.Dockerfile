@@ -18,7 +18,6 @@ RUN apt-get update \
 
 
 COPY deploy/chives_entrypoint.py /home/chives/chives_entrypoint.py
-COPY deploy/chives_config.py /home/chives/chives_config.py
 COPY deploy/entrypoint.sh /home/chives/entrypoint.sh
 RUN chmod a+x /home/chives/entrypoint.sh
 EXPOSE 5000
